@@ -1,0 +1,461 @@
+{
+    "layout1": {
+        "type": "layout",
+        "pages": [ "general", "appearance", "kernel", "gpu", "tuning" ],
+        "general": {
+            "type": "page",
+            "title": "Desklet",
+            "sections": [ "section-general", "section-debugging" ]
+        },
+        "appearance": {
+            "type": "page",
+            "title": "Appearance",
+            "sections": [ "section-appearance", "section-font", "section-background", "section-border" ]
+        },
+        "kernel": {
+            "type": "page",
+            "title": "Kernel",
+            "sections": [ "section-features", "section-modules" ]
+        },
+        "gpu": {
+            "type": "page",
+            "title": "GPU",
+            "sections": [ "section-amd", "section-nvidia" ]
+        },
+        "tuning": {
+            "type": "page",
+            "title": "Tuning",
+            "sections": [ "section-tuning", "section-tuning-amd", "section-tuning-nvidia" ]
+        },
+
+        "section-general": {
+            "type": "section",
+            "title": "Desklet",
+            "keys": [ "delay", "show_updated", "show_actual_updated" ]
+        },
+
+        "section-debugging": {
+            "type": "section",
+            "title": "Debugging",
+            "keys": [ "enable_debug" ]  
+        },
+
+        "section-appearance": {
+            "type": "section",
+            "title": "Appearance",
+            "keys": [ "set_width", "width", "set_height", "height", "hide-decorations", "reserve_status" ]
+        },
+        "section-font": {
+            "type": "section",
+            "title": "Font",
+            "keys": [ "font", "font-color" ]
+        },
+        "section-background": {
+            "type": "section",
+            "title": "Background",
+            "keys": [ "background-color", "background-transparency" ]
+        },
+        "section-border": {
+            "type": "section",
+            "title": "Border",
+            "keys": [ "border-color", "border-width" ]
+        },
+
+        "section-features": {
+            "type": "section",
+            "title": "Features",
+            "keys": [ "enable_version", "enable_loadavg", "enable_ram", "enable_modules", "enable_module_report" ]
+        },
+
+        "section-modules": {
+            "type": "section",
+            "title": "Kernel Modules",
+            "keys": [ "kernel_modules", "video_expected", "video_blacklisted", "extra_modules_required" ],
+            "dependency": "enable_modules"
+        },
+
+        "section-amd": {
+            "type": "section",
+            "title": "AMD",
+            "keys": [ "gpu_dependency", "enable_amd", "enable_amd_gpu", "enable_amd_ram", "enable_amd_temperature" ]
+        },
+
+        "section-nvidia": {
+            "type": "section",
+            "title": "Nvidia",
+            "keys": [ "gpu_dependency", "enable_nvidia", "enable_nvidia_driver", "enable_nvidia_gpu", "enable_nvidia_ram", "enable_nvidia_temperature" ]
+        },
+
+        "section-tuning": {
+            "type": "section",
+            "title": "Tuning",
+            "keys": [ "tuning_about", "read_proc_version_expiration", "read_proc_loadavg_expiration", "read_proc_meminfo_expiration", "read_proc_modules_expiration" ]
+        },
+        "section-tuning-amd": {
+            "type": "section",
+            "title": "AMD",
+            "keys": [ "gpu_dependency", "read_amd_count_expiration", "get_amd_name_expiration", "get_amd_query_expiration", "read_amd_temperature_expiration" ],
+            "dependency": "enable_amd"
+        },
+        "section-tuning-nvidia": {
+            "type": "section",
+            "title": "Nvidia",
+            "keys": [ "gpu_dependency", "read_nvidia_count_expiration", "get_nvidia_query_expiration" ],
+            "dependency": "enable_nvidia"
+        }
+    },
+
+    "delay": {
+        "type": "spinbutton",
+        "default": 1,
+        "min": 1,
+        "max": 120,
+        "step": 1,
+        "description": "Display refresh",
+        "tooltip": "Wait specified number of seconds before refreshing display"
+    },
+    "configuration_delay": {
+        "type": "spinbutton",
+        "default": 3,
+        "min": 0,
+        "max": 10,
+        "step": 1,
+        "description": "Configuration delay",
+        "tooltip": "Adds a delay before configuration takes effect, this is in order to avoid firing off costly processes while actively typing"
+    },
+    "show_updated": {
+        "type" : "checkbox",
+        "description": "Show last refresh time",
+        "default": false
+    },
+    "show_actual_updated": {
+        "type" : "checkbox",
+        "description": "Show update time instead",
+        "default": false,
+        "dependency": "show_updated",
+        "tooltip": "Show the timestamp for the last data collection operation instead of last rendering time"
+    },
+    "enable_debug": {
+        "type" : "checkbox",
+        "description": "Enable debugging",
+        "default": false,
+        "tooltip": "Enable Desklet debugging information (available from 'cinnamon-looking-glass')"
+    },
+    "reserve_status": {
+        "type" : "checkbox",
+        "description": "Reserve status",
+        "default": true,
+        "tooltip": "Always reserve space for status - this keeps the desklet from bouncing on the screen"
+    },
+
+    "set_width": {
+        "type" : "checkbox",
+        "description": "Set Desklet width",
+        "default": true,
+        "tooltip": "Set DeskLet dimensions manually instead of automatic size"
+    },
+    "width": {
+        "type": "spinbutton",
+        "default": 300,
+        "min": 1,
+        "max": 1024,
+        "step": 1,
+        "description": "Desklet width",
+        "tooltip": "Width in pixels",
+        "dependency": "set_width"
+    },
+    "set_height": {
+        "type" : "checkbox",
+        "description": "Set Desklet height",
+        "default": false,
+        "tooltip": "Set DeskLet dimensions manually instead of automatic size"
+    },
+    "height": {
+        "type": "spinbutton",
+        "default": 300,
+        "min": 1,
+        "max": 1024,
+        "step": 1,
+        "description": "Desklet height",
+        "tooltip": "Height in pixels",
+        "dependency": "set_height"
+    },
+    "hide-decorations": {
+        "type": "checkbox",
+        "description": "Hide decorations",
+        "default": true
+    },
+
+    "enable_version": {
+        "type" : "checkbox",
+        "description": "Kernel version",
+        "default": true,
+        "tooltip": "Enable display of kernel version as read from /proc/version"
+    },
+
+    "enable_loadavg": {
+        "type" : "checkbox",
+        "description": "Load averages",
+        "default": true,
+        "tooltip": "Enable load averages as read from /proc/loadavg"
+    },
+
+    "enable_ram": {
+        "type" : "checkbox",
+        "description": "RAM-usage",
+        "default": true,
+        "tooltip": "Enable RAM-usage as read from /proc/meminfo, with calculated percentage of used memory vs total memory available (swap not included)."
+    },
+    "enable_modules": {
+        "type" : "checkbox",
+        "description": "Module checks",
+        "default": true,
+        "tooltip": "Enable display of kernel version as read from /proc/version"
+    },
+    "enable_module_report": {
+        "type" : "checkbox",
+        "description": "Display module list",
+        "default": true,
+        "tooltip": "List relevant kernel modules as a list, otherwise only report errors via status",
+        "dependency": "enable_modules"
+    },
+
+    "kernel_modules": {
+        "type": "label",
+        "description": "Settings will be used in order to determine which modules the desklet should consider 'correct'. The term 'video' in this context indicate modules listed as depended upon it, more specifically the last column when running 'lsmod'."
+    },
+    "video_blacklisted": {
+        "type": "textview",
+        "height": 40,
+        "default": "nouveau",
+        "description": "Unwanted video modules",
+        "tooltip": "List specific video modules that we do not want loaded"
+    },
+    "video_expected": {
+        "type": "textview",
+        "height": 40,
+        "default": "nvidia_modeset",
+        "description": "Expected video modules",
+        "tooltip": "List video modules that we have an expectation of being loaded"
+    },
+    "extra_modules_required": {
+        "type": "textview",
+        "height": 40,
+        "default": "nct6687",
+        "description": "Extra modules",
+        "tooltip": "List any extra kernel modules that the user would consider a requirement"
+    },
+
+    "gpu_dependency": {
+        "type": "label",
+        "description": "NB! Setting \"Module checks\" have been not been enabled, certain functionality may NOT be available.",
+        "dependency": "!enable_modules"
+    },
+
+    "enable_amd": {
+        "type" : "checkbox",
+        "description": "Enable AMD",
+        "default": true,
+        "tooltip": "Enable collection of GPU-information for AMD GPUs",
+        "dependency": "enable_modules"
+    },
+    "enable_amd_gpu": {
+        "type" : "checkbox",
+        "description": "GPU-usage",
+        "default": true,
+        "tooltip": "Enable display of GPU-utilization as reported by the driver.",
+        "dependency": "enable_amd"
+    },
+    "enable_amd_ram": {
+        "type" : "checkbox",
+        "description": "RAM-usage",
+        "default": true,
+        "tooltip": "Enable display of memory as reported by the driver.",
+        "dependency": "enable_amd"
+    },
+    "enable_amd_temperature": {
+        "type" : "checkbox",
+        "description": "Temperature",
+        "default": true,
+        "tooltip": "Enable collection of temperature information for AMD GPUs, collected using 'lm-sensors'.",
+        "dependency": "enable_amd"
+    },
+
+    "enable_nvidia": {
+        "type" : "checkbox",
+        "description": "Enable Nvidia",
+        "default": true,
+        "tooltip": "Enable collection of GPU-information for Nvidia GPUs",
+        "dependency": "enable_modules"
+    },
+    "enable_nvidia_driver": {
+        "type" : "checkbox",
+        "description": "Driver version",
+        "default": true,
+        "tooltip": "Display version of driver as reported by 'nvidia-smi'.",
+        "dependency": "enable_nvidia"
+    },
+    "enable_nvidia_gpu": {
+        "type" : "checkbox",
+        "description": "GPU-usage",
+        "default": true,
+        "tooltip": "Enable display of GPU-utilization as reported by 'nvidia-smi'.",
+        "dependency": "enable_nvidia"
+    },
+    "enable_nvidia_ram": {
+        "type" : "checkbox",
+        "description": "RAM-usage",
+        "default": true,
+        "tooltip": "Display usage of memory as reported by 'nvidia-smi'.",
+        "dependency": "enable_nvidia"
+    },
+    "enable_nvidia_temperature": {
+        "type" : "checkbox",
+        "description": "Temperature",
+        "default": true,
+        "tooltip": "Display temperature as reported by 'nvidia-smi'",
+        "dependency": "enable_nvidia"
+    },
+
+    "tuning_about": {
+        "type": "label",
+        "description": "This page allows you to tune how often certain information elements should be updated, time is specified in number of seconds. Note that the expiration of these will only be evaluated at certain intervals as specified by 'delay' on the first configuration-page."
+    },
+    "read_proc_loadavg_expiration": {
+        "type": "spinbutton",
+        "default": 10,
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "description": "Check load averages",
+        "dependency": "enable_loadavg"
+    },
+    "read_proc_version_expiration": {
+        "type": "spinbutton",
+        "default": 3600,
+        "min": 60,
+        "max": 7200,
+        "step": 60,
+        "description": "Check kernel version",
+        "dependency": "enable_version"
+    },
+    "read_proc_modules_expiration": {
+        "type": "spinbutton",
+        "default": 60,
+        "min": 10,
+        "max": 3600,
+        "step": 10,
+        "description": "Check kernel modules",
+        "dependency": "enable_modules"
+    },
+    "read_proc_meminfo_expiration": {
+        "type": "spinbutton",
+        "default": 10,
+        "min": 10,
+        "max": 600,
+        "step": 1,
+        "description": "Check system RAM",
+        "dependency": "enable_ram"
+    },
+    "read_nvidia_count_expiration": {
+        "type": "spinbutton",
+        "default": 600,
+        "min": 10,
+        "max": 3600,
+        "step": 10,
+        "description": "Discover Nvidia GPU",
+        "dependency": "enable_nvidia"
+    },
+    "get_nvidia_query_expiration": {
+        "type": "spinbutton",
+        "default": 10,
+        "min": 1,
+        "max": 600,
+        "step": 1,
+        "description": "Query Nvidia GPU",
+        "dependency": "enable_nvidia"
+    },
+    "read_amd_count_expiration": {
+        "type": "spinbutton",
+        "default": 600,
+        "min": 10,
+        "max": 3600,
+        "step": 10,
+        "description": "Discover AMD GPU",
+        "dependency": "enable_amd"
+    },
+    "get_amd_name_expiration": {
+        "type": "spinbutton",
+        "default": 3600,
+        "min": 60,
+        "max": 7200,
+        "step": 60,
+        "description": "Lookup AMD GPU description",
+        "dependency": "enable_amd"
+    },
+    "get_amd_query_expiration": {
+        "type": "spinbutton",
+        "default": 10,
+        "min": 1,
+        "max": 600,
+        "step": 1,
+        "description": "Query AMD GPU",
+        "dependency": "enable_amd"
+    },
+    "read_amd_temperature_expiration": {
+        "type": "spinbutton",
+        "default": 20,
+        "min": 1,
+        "max": 600,
+        "step": 1,
+        "description": "Query AMD GPU temperature",
+        "dependency": "enable_amd"
+    },
+
+    "font": {
+        "type": "fontchooser",
+        "default": "Monospace 15",
+        "description": "Font"
+    },
+    "font-color" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(222,221,218)",
+	    "description" : "Font color",
+	    "tooltip" : "Font color"
+    },
+
+    "background-color": {
+        "type": "colorchooser",
+        "indent": true,
+        "default": "rgb(0,0,0)",
+        "description": "Background color",
+        "tooltip": "Click to select the background color"
+    },
+    "background-transparency": {
+        "type": "scale",
+        "indent": true,
+        "default": 0.3,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05,
+        "description": "Transparency",
+        "tooltip": "Transparency of the desklet"
+    },
+    
+    "border-color": {
+        "type": "colorchooser",
+        "indent": true,
+        "default": "rgb(222,221,218)",
+        "description": "Border color",
+        "tooltip": "Click to select the border color"
+    },
+    "border-width": {
+        "type": "spinbutton",
+        "default": 2,
+        "min": 0,
+        "max": 200,
+        "units": "px",
+        "description" : "Border width",
+        "step": 1
+    }
+}

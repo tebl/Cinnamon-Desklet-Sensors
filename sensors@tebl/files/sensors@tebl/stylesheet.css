@@ -1,0 +1,29 @@
+.sensors {
+  padding: 10px;
+}
+
+.fact-value {
+  text-align: right;
+}
+
+.label-title {
+  padding-top: 10px;
+  text-align: center;
+  font-size: 120%;
+}
+
+.label-status {
+  padding-top: 10px;
+  text-align: center;
+}
+
+.label-error {
+  padding-top: 10px;
+  text-align: center;
+  color: #fa0000;
+}
+
+.label-icon {
+  display: inline-block;
+  padding-right: 5px;
+}
