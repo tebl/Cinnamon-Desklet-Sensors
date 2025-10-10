@@ -11,7 +11,8 @@ const FileUtils = imports.misc.fileUtils;
 
 const icons = { box_checked: "\u2611", box_crossed: "\u2612", box_empty: "\u2610", update: "\u27F3", degrees: "\u2103" };
 
-const DESKLET_UUID = "gpu-modules@teblify";
+// const DESKLET_UUID = "sensors@tebl";
+const DESKLET_UUID = "devtest-sensors@tebl";
 const HOME_DIR = GLib.get_home_dir();
 const DESKLET_DIR = HOME_DIR + "/.local/share/cinnamon/desklets/" + DESKLET_UUID;
 const FORCE_DEBUG = Gio.file_new_for_path(DESKLET_DIR + "/DEBUG").query_exists(null);
@@ -61,35 +62,7 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "enable_debug", "enable_debug", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_version", "enable_version", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_loadavg", "enable_loadavg", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_ram", "enable_ram", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_modules", "enable_modules", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_module_report", "enable_module_report", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "video_blacklisted", "setting_video_blacklisted", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "video_expected", "setting_video_expected", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "extra_modules_required", "setting_extra_modules", this.on_settings_changed);
-
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_amd", "enable_amd", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_amd_gpu", "enable_amd_gpu", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_amd_ram", "enable_amd_ram", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_amd_temperature", "enable_amd_temperature", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_nvidia", "enable_nvidia", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_nvidia_driver", "enable_nvidia_driver", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_nvidia_gpu", "enable_nvidia_gpu", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_nvidia_ram", "enable_nvidia_ram", this.on_display_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "enable_nvidia_temperature", "enable_nvidia_temperature", this.on_display_changed);
-
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_proc_loadavg_expiration", "read_proc_loadavg_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_proc_meminfo_expiration", "read_proc_meminfo_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_proc_modules_expiration", "read_proc_modules_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_proc_version_expiration", "read_proc_version_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_nvidia_count_expiration", "read_nvidia_count_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "get_nvidia_query_expiration", "get_nvidia_query_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_amd_count_expiration", "read_amd_count_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "get_amd_name_expiration", "get_amd_name_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "get_amd_query_expiration", "get_amd_query_expiration", this.on_settings_changed);
-        // this.settings.bindProperty(Settings.BindingDirection.IN, "read_amd_temperature_expiration", "read_amd_temperature_expiration", this.on_settings_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "read_sensors_expiration", "read_sensors_expiration", this.on_settings_changed);
 
         this.load_filter_settings();
         this.toggle_decorations();
@@ -200,27 +173,29 @@ SensorsDesklet.prototype = {
     set_display: function() {
         try {
             let font_properties = this.get_css_font(this.setting_font);
-            this.main_box.style = 
-                (font_properties.names.length === 0 ? "" : ("font-family: " + font_properties.names.join(", ") + ";\n")) + 
-                (font_properties.size === "" ? "" : ("font-size: " + font_properties.size + "px;\n")) +
-                (font_properties.style === "" ? "" : ("font-style: " + font_properties.style + ";\n")) +
-                (font_properties.weight === "" ? "" : ("font-weight: " + font_properties.weight + ";\n")) +
-                "color: " + this.setting_font_color + ";\n" +
-                "background-color: " + this.get_css_color(this.setting_background_color, this.setting_background_transparency) + ";\n" +
-                "border-width: " + this.setting_border_width + "px;\n" +
-                "border-color: " + this.get_css_color(this.setting_border_color, this.setting_background_transparency) + ";\n" +
-                "border-radius: 10pt;\n" +
-                "padding: 5px 10px;";
+            if (this.main_box) {
+                this.main_box.style = 
+                    (font_properties.names.length === 0 ? "" : ("font-family: " + font_properties.names.join(", ") + ";\n")) + 
+                    (font_properties.size === "" ? "" : ("font-size: " + font_properties.size + "px;\n")) +
+                    (font_properties.style === "" ? "" : ("font-style: " + font_properties.style + ";\n")) +
+                    (font_properties.weight === "" ? "" : ("font-weight: " + font_properties.weight + ";\n")) +
+                    "color: " + this.setting_font_color + ";\n" +
+                    "background-color: " + this.get_css_color(this.setting_background_color, this.setting_background_transparency) + ";\n" +
+                    "border-width: " + this.setting_border_width + "px;\n" +
+                    "border-color: " + this.get_css_color(this.setting_border_color, this.setting_background_transparency) + ";\n" +
+                    "border-radius: 10pt;\n" +
+                    "padding: 5px 10px;";
+
+                let x = -1;
+                let y = -1;
+                if (this.setting_set_width) x = this.setting_width;
+                if (this.setting_set_height) y = this.setting_height;
+                this.main_box.set_size(x, y);
+            }
             this.toggle_decorations();
         } catch (error) {
             this.log_error(error);
         }
-
-        let x = -1;
-        let y = -1;
-        if (this.setting_set_width) x = this.setting_width;
-        if (this.setting_set_height) y = this.setting_height;
-        this.main_box.set_size(x, y);
     },
 
     toggle_decorations() {
@@ -240,17 +215,6 @@ SensorsDesklet.prototype = {
             try {
                 // Start asynchronous tasks
                 this.read_sensors();
-
-                // this.read_proc_loadavg();
-                // this.read_proc_version();
-                // this.read_proc_modules();
-                // this.read_proc_meminfo();
-                // this.read_nvidia_count();
-                // this.read_nvidia_update();
-                // this.read_amd_count();
-                // this.read_amd_names();
-                // this.read_amd_update();
-                // this.read_amd_temperature();
             } catch (e) {
                 this.log_error("Uncaught error in on_data_changed: " + e); 
                 this.set_error("Uncaught error");
@@ -265,9 +229,6 @@ SensorsDesklet.prototype = {
     },
 
     read_sensors: function() {
-        // if (!this.enable_modules) return;
-        // if (!this.enable_nvidia) return;
-        // if (!this.facts.get("video.nvidia_modeset")) return;
         if (!this.facts.is_pending_update("sensors.devices")) return;
         this.log_debug("running read_sensors");
 
@@ -295,41 +256,89 @@ SensorsDesklet.prototype = {
                         if (condition != GLib.IOCondition.HUP) {
                             let [status, out] = channel.read_to_end();
                             let data = out.toString()
-                            // desklet_instance.log_error(data);
-                            // for (const entry of data) {
-                            // let devices = {};
-                            desklet_instance.parse_sensors(data);
-                            // }
 
-                            // desklet_instance.facts.set("nvidia.devices", devices, desklet_instance.read_nvidia_count_expiration);
+                            desklet_instance.parse_sensors(data);
+                            desklet_instance.facts.set("last_updated", new Date(), desklet_instance.read_sensors_expiration);
                         }
                         GLib.source_remove(tag_watch_std_out);
                         channel.shutdown(true);
                     }
                 );
+            } else {
+                this.facts.set_error("sensors.devices", true, this.read_sensors_expiration);
             }
         } catch (error) {
-            this.log_error("Failed read_nvidia_count: " + error);
-            this.set_error("Error Nvidia GPU");
+            this.log_error("Failed read_sensors: " + error);
+            this.set_error("Error processing sensors", this.read_sensors_expiration);
+            this.facts.set_error("sensors.devices", true, this.read_sensors_expiration);
         }
     },
 
     parse_sensors: function(data) {
-        this.log_error(data);
+        try {
+            let sensors = JSON.parse(data);
+            let filtered_data = {};
+
+            for (const chip_name of Object.keys(sensors)) {
+                filtered_data[chip_name] = { fans: {}, temps: {}, volts: {} };
+
+                for (const sensor_name of Object.keys(sensors[chip_name])) {
+                    if (sensor_name == "Adapter") continue;
+
+                    this.map_sensor(chip_name, sensor_name, sensors[chip_name][sensor_name], filtered_data);
+                }
+            }
+
+            this.facts.set("sensors.devices", filtered_data, this.read_sensors_expiration);
+        } catch (error) {
+            this.log_error("Error parsing sensor data: " + error);
+            this.facts.set_error("sensors.devices", error, this.read_sensors_expiration);
+        }
     },
 
-    get_file_contents: function(path) {
-        let result;
+    map_sensor: function(chip_name, sensor_name, data, filtered_data) {
+        let sensor_type = this.get_sensor_type(data);
+        if (sensor_type) {
+            let mapped = {};
 
-        const file = Gio.file_new_for_path(path);
-        let [success, contents, tag] = file.load_contents(null);
-        if (success) {
-            let data = ByteArray.toString(contents);
-            result = data.trim();
+            for (const input_key of Object.keys(data)) {
+                let index = input_key.indexOf("_");
+                let found_key = input_key.slice(index + 1);
+                switch (found_key) {
+                    case "input":
+                    case "min":
+                    case "max":
+                    case "crit":
+                    case "alarm":
+                        mapped[found_key] = data[input_key];
+                        break;
+
+                    default:
+                        this.log_debug("Unknown sensor key: " + found_key);
+                        break;
+                }
+            }
+
+            filtered_data[chip_name][sensor_type][sensor_name] = mapped;
         }
-        GLib.free(contents);
+    },
 
-        return result;
+    get_sensor_type: function(data) {
+        for (const key of Object.keys(data)) {
+            if (key.match(/^temp\d+_/)) {
+                return "temps";
+            }
+
+            if (key.match(/^in\d+_/)) {
+                return "volts";
+            }
+
+            if (key.match(/^fan\d+_/)) {
+                return "fans";
+            }
+        }
+
+        return undefined;
     },
 
     // format_memory_sizes: [
@@ -451,7 +460,7 @@ SensorsDesklet.prototype = {
 
     status_expiration: 10,
     set_error: function(message, expiration = this.status_expiration) {
-        this.facts.set("status", { level: 0, message: message }, this.status_expiration);
+        this.facts.set("status", { level: 0, message: message }, expiration);
     },
 
     set_message: function(message, expiration = this.status_expiration) {
@@ -477,12 +486,13 @@ function FactStore(grace_period = 10) {
 
 FactStore.prototype = {
     init: function(grace_period) {
-        this.facts = {};
+        this.reset();
         this.grace_period = grace_period;
     },
 
     reset: function() {
         this.facts = {};
+        this.errors = {};
     },
 
     debug: function() {
@@ -496,10 +506,18 @@ FactStore.prototype = {
     },
 
     set: function(key, value, retention = -1) {
+        this.set_data(this.facts, key, value, retention);
+    },
+
+    set_error: function(key, value = true, retention = -1) {
+        this.set_data(this.errors, key, value, retention);
+    },
+
+    set_data: function(dictionary, key, value, retention = -1) {
         let expiration = Date.now();
         if (retention > 0) expiration = expiration + (retention * 1000);
 
-        this.facts[key] = {
+        dictionary[key] = {
             value: value,
             valid: expiration
         }
@@ -536,6 +554,14 @@ FactStore.prototype = {
     },
 
     is_pending_update: function(key) {
+        // Check if we should avoid update due to previous error
+        if (this.errors[key] != undefined) {
+            if (this.before_time(this.errors[key].valid)) {
+                return false;
+            }
+        }
+
+        // Check if we have data that can be considered valid
         if (this.facts[key]) {
             if (this.before_time(this.facts[key].valid)) {
                 return false;
@@ -561,7 +587,25 @@ DataView.prototype = {
             vertical: true
         });
 
-        this.render_line("test", "test", container);
+        let devices = this.parent.facts.get("sensors.devices");
+        if (devices) {
+            for (const chip_name of Object.keys(devices)) {
+                let chip = devices[chip_name];
+                this.render_header(chip_name, container);
+
+                for (const fan_name of Object.keys(chip.fans)) {
+                    // this.render_line(fan_name, chip.fans[fan_name].input + " RPM", container);
+                    this.render_fan(fan_name, chip.fans[fan_name], container);
+                    // this.parent.log_debug_object(chip.fans[fan_name].input);
+                }
+        //         for (const sensor_name of Object.keys(chip)) {
+        //             if (sensor_name == "Adapter") continue;
+
+        //             const sensor = chip[sensor_name];
+        //             this.render_sensor(sensor_name, sensor, container);
+        //         }
+            }
+        }
 
         return container;
     },
@@ -582,18 +626,39 @@ DataView.prototype = {
         container.add(box, { });
     },
 
-    render_module: function(module, details, container) {
-        let box = new St.BoxLayout( { vertical: false } );
+    render_fan: function(fan_name, details, container) {
+        let box = new St.BoxLayout( { vertical: false, x_expand: true, y_align: St.Align.MIDDLE } );
 
-        box.add(this.create_cell_icon(module, details), {
-            expand: false
-        });
-        box.add(this.create_cell_name(module, details), {
-            expand: true
-        });
+        let path = GLib.build_filenamev([ DESKLET_DIR, "img", "fan.svg" ]);
+        // this.parent.log_error(path);
+        let icon = Gio.file_new_for_path( path );
+        let gicon = new Gio.FileIcon({ file: icon });
+        box.add_actor(
+            new St.Icon({
+                gicon: gicon, icon_size: 32, icon_type: St.IconType.SYMBOLIC, style: "margin-right: 10px"
+            })
+        );
+
+        let text_box = new St.BoxLayout({ vertical: true });
+        text_box.add(new St.Label({ text: fan_name + ": ", style: "margin-top: 3px" }), { expand: true });
+        text_box.add(new St.Label({ text: details.input + " RPM", style: "margin-bottom: 3px" }), { expand: true });
+        box.add(text_box);
 
         container.add(box, { });
     },
+
+    // render_module: function(module, details, container) {
+    //     let box = new St.BoxLayout( { vertical: false } );
+
+    //     box.add(this.create_cell_icon(module, details), {
+    //         expand: false
+    //     });
+    //     box.add(this.create_cell_name(module, details), {
+    //         expand: true
+    //     });
+
+    //     container.add(box, { });
+    // },
 
     create_cell_icon: function(module, details) {
         let label = new St.Label({
