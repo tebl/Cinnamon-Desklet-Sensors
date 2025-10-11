@@ -2,10 +2,6 @@
   padding: 10px;
 }
 
-.fact-value {
-  text-align: right;
-}
-
 .label-title {
   padding-top: 10px;
   text-align: center;
@@ -26,4 +22,12 @@
 .label-icon {
   display: inline-block;
   padding-right: 5px;
+}
+
+.sensor_name {
+  margin-top: 3px;
+}
+
+.sensor_value {
+  margin-bottom: 3px;
 }

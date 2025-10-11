@@ -9,7 +9,7 @@ const Mainloop = imports.mainloop;
 const Lang = imports.lang;
 const FileUtils = imports.misc.fileUtils;
 
-const icons = { box_checked: "\u2611", box_crossed: "\u2612", box_empty: "\u2610", update: "\u27F3", degrees: "\u2103" };
+const icons = { update: "\u27F3", degrees_c: "\u2103" };
 
 // const DESKLET_UUID = "sensors@tebl";
 const DESKLET_UUID = "devtest-sensors@tebl";
@@ -53,13 +53,15 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "set_height", "setting_set_height", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "height", "setting_height", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, 'hide-decorations', 'hide_decorations', this.on_display_changed);
-
         this.settings.bindProperty(Settings.BindingDirection.IN, "font", "setting_font", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-color", "setting_font_color", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-color", "setting_background_color", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-transparency", "setting_background_transparency", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-width", "setting_border_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "enable_debug", "enable_debug", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "read_sensors_expiration", "read_sensors_expiration", this.on_settings_changed);
@@ -593,17 +595,68 @@ DataView.prototype = {
                 let chip = devices[chip_name];
                 this.render_header(chip_name, container);
 
-                for (const fan_name of Object.keys(chip.fans)) {
-                    // this.render_line(fan_name, chip.fans[fan_name].input + " RPM", container);
-                    this.render_fan(fan_name, chip.fans[fan_name], container);
-                    // this.parent.log_debug_object(chip.fans[fan_name].input);
-                }
-        //         for (const sensor_name of Object.keys(chip)) {
-        //             if (sensor_name == "Adapter") continue;
+                let table_row = 0;
+                let table_col = 0;
 
-        //             const sensor = chip[sensor_name];
-        //             this.render_sensor(sensor_name, sensor, container);
-        //         }
+                let table = new St.Table( {homogeneous: true} );
+                for (const sensor_name of Object.keys(chip.fans).sort()) {
+                    table.add(this.render_fan(sensor_name, chip.fans[sensor_name]), { row: table_row, col: table_col });
+
+                    table_col++;
+                    if (table_col == this.parent.sensors_per_row) {
+                        table_col = 0;
+                        table_row++;
+                    }
+                }
+                if (this.parent.sensor_type_per_row) {
+                    if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                        for (; table_col < this.parent.sensors_per_row; table_col++) {
+                            table.add(this.render_blank(), { row: table_row, col: table_col });
+                        }
+                        table_row++;
+                    }
+                    table_col = 0;
+                }
+                
+
+                for (const sensor_name of Object.keys(chip.temps).sort()) {
+                    table.add(this.render_temperature(sensor_name, chip.temps[sensor_name]), { row: table_row, col: table_col });
+
+                    table_col++;
+                    if (table_col == this.parent.sensors_per_row) {
+                        table_col = 0;
+                        table_row++;
+                    }
+                }
+                if (this.parent.sensor_type_per_row) {
+                    if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                        for (; table_col < this.parent.sensors_per_row; table_col++) {
+                            table.add(this.render_blank(), { row: table_row, col: table_col });
+                        }
+                        table_row++;
+                    }
+                    table_col = 0;
+                }
+
+
+                for (const sensor_name of Object.keys(chip.volts).sort()) {
+                    table.add(this.render_voltage(sensor_name, chip.volts[sensor_name]), { row: table_row, col: table_col });
+
+                    table_col++;
+                    if (table_col == this.parent.sensors_per_row) {
+                        table_col = 0;
+                        table_row++;
+                    }
+                }
+
+                // Fill out the rest of the table
+                if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                    for (; table_col < this.parent.sensors_per_row; table_col++) {
+                        table.add(this.render_blank(), { row: table_row, col: table_col });
+                    }
+                }
+
+                container.add(table);
             }
         }
 
@@ -626,11 +679,38 @@ DataView.prototype = {
         container.add(box, { });
     },
 
-    render_fan: function(fan_name, details, container) {
-        let box = new St.BoxLayout( { vertical: false, x_expand: true, y_align: St.Align.MIDDLE } );
+    render_blank: function() {
+        return new St.Label({ text: "" });
+    },
 
-        let path = GLib.build_filenamev([ DESKLET_DIR, "img", "fan.svg" ]);
-        // this.parent.log_error(path);
+    render_fan: function(sensor_name, details) {
+        return this.render_sensor(sensor_name, details.input + " RPM", "fan");
+    },
+
+    render_temperature: function(sensor_name, details) {
+        let value = details.input;
+        if (value != 0) {
+            value = details.input.toFixed(1) + icons.degrees_c;
+        } else {
+            value = "-";
+        }
+
+        return this.render_sensor(sensor_name, value, "thermometer-low");
+    },
+
+    render_voltage: function(sensor_name, details) {
+        let value = details.input;
+        if (value != 0) {
+            value = details.input.toFixed(1);
+        }
+
+        return this.render_sensor(sensor_name, value + "V", "lightning-charge");
+    },
+
+    render_sensor: function(sensor_name, sensor_value, icon_name) {
+        let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
+
+        let path = GLib.build_filenamev([ DESKLET_DIR, "img", icon_name + ".svg" ]);
         let icon = Gio.file_new_for_path( path );
         let gicon = new Gio.FileIcon({ file: icon });
         box.add_actor(
@@ -640,25 +720,12 @@ DataView.prototype = {
         );
 
         let text_box = new St.BoxLayout({ vertical: true });
-        text_box.add(new St.Label({ text: fan_name + ": ", style: "margin-top: 3px" }), { expand: true });
-        text_box.add(new St.Label({ text: details.input + " RPM", style: "margin-bottom: 3px" }), { expand: true });
+        text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name" }), { expand: true });
+        text_box.add(new St.Label({ text: sensor_value, style_class: "sensor_value" }), { expand: true });
         box.add(text_box);
 
-        container.add(box, { });
+        return box;
     },
-
-    // render_module: function(module, details, container) {
-    //     let box = new St.BoxLayout( { vertical: false } );
-
-    //     box.add(this.create_cell_icon(module, details), {
-    //         expand: false
-    //     });
-    //     box.add(this.create_cell_name(module, details), {
-    //         expand: true
-    //     });
-
-    //     container.add(box, { });
-    // },
 
     create_cell_icon: function(module, details) {
         let label = new St.Label({

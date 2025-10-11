@@ -59,7 +59,7 @@
         "section-sensors": {
             "type": "section",
             "title": "Sensors",
-            "keys": [ ]
+            "keys": [ "sensors_per_row", "sensor_type_per_row" ]
         },
 
         "section-tuning": {
@@ -108,19 +108,19 @@
     "reserve_status": {
         "type" : "checkbox",
         "description": "Reserve status",
-        "default": true,
+        "default": false,
         "tooltip": "Always reserve space for status - this keeps the desklet from bouncing on the screen"
     },
 
     "set_width": {
         "type" : "checkbox",
         "description": "Set Desklet width",
-        "default": true,
+        "default": false,
         "tooltip": "Set DeskLet dimensions manually instead of automatic size"
     },
     "width": {
         "type": "spinbutton",
-        "default": 300,
+        "default": 600,
         "min": 1,
         "max": 1024,
         "step": 1,
@@ -148,6 +148,20 @@
         "type": "checkbox",
         "description": "Hide decorations",
         "default": true
+    },
+
+    "sensors_per_row": {
+        "type": "spinbutton",
+        "default": 2,
+        "min": 1,
+        "max": 5,
+        "step": 1,
+        "description": "Sensors per row"
+    },
+    "sensor_type_per_row": {
+        "type" : "checkbox",
+        "default": true,
+        "description": "Separate sensor types"
     },
 
     "tuning_about": {
