@@ -695,7 +695,7 @@ DataView.prototype = {
             value = "-";
         }
 
-        return this.render_sensor(sensor_name, value, "thermometer-low");
+        return this.render_sensor(sensor_name, value, "temperature-medium");
     },
 
     render_voltage: function(sensor_name, details) {
@@ -704,7 +704,7 @@ DataView.prototype = {
             value = details.input.toFixed(1);
         }
 
-        return this.render_sensor(sensor_name, value + "V", "lightning-charge");
+        return this.render_sensor(sensor_name, value + "V", "volt");
     },
 
     render_sensor: function(sensor_name, sensor_value, icon_name) {
