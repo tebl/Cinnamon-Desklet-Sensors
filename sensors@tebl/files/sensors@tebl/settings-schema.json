@@ -48,7 +48,7 @@
         "section-background": {
             "type": "section",
             "title": "Background",
-            "keys": [ "background-color", "background-transparency" ]
+            "keys": [ "background-color", "background-transparency", "icon-theme" ]
         },
         "section-border": {
             "type": "section",
@@ -206,7 +206,16 @@
         "description": "Transparency",
         "tooltip": "Transparency of the desklet"
     },
-    
+    "icon-theme" : {
+        "type" : "combobox",
+        "description" : "Icon theme",
+        "default" : "dark",
+        "options" : {
+            "Dark Mode" : "dark",
+            "Light Mode" : "light"
+        }
+    },
+
     "border-color": {
         "type": "colorchooser",
         "indent": true,

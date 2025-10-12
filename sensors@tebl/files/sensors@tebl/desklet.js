@@ -57,6 +57,7 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "font-color", "setting_font_color", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-color", "setting_background_color", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-transparency", "setting_background_transparency", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "icon-theme", "setting_icon_theme", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-width", "setting_border_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
 
@@ -710,7 +711,7 @@ DataView.prototype = {
     render_sensor: function(sensor_name, sensor_value, icon_name) {
         let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
 
-        let path = GLib.build_filenamev([ DESKLET_DIR, "img", icon_name + ".svg" ]);
+        let path = GLib.build_filenamev([ DESKLET_DIR, "img", this.parent.setting_icon_theme, icon_name + ".svg" ]);
         let icon = Gio.file_new_for_path( path );
         let gicon = new Gio.FileIcon({ file: icon });
         box.add_actor(
