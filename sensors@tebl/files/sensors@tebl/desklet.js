@@ -570,90 +570,133 @@ DataView.prototype = {
         });
 
         let devices = this.parent.facts.get("sensors.devices");
-        if (devices) {
-            for (const chip_name of Object.keys(devices)) {
-                let chip = devices[chip_name];
-                this.render_header(chip_name, container);
+        let should_render = this.filter_sensors(devices);
 
-                let table_row = 0;
-                let table_col = 0;
+        let chip_keys = Object.keys(should_render).sort();
+        for (const chip_name of chip_keys) {
+            let chip = devices[chip_name];
+            this.render_header(chip_name, container);
 
-                let table = new St.Table( {homogeneous: true} );
-                if (this.parent.include_fans) {
-                    for (const sensor_name of Object.keys(chip.fans).sort()) {
-                        let sensor_details = chip.fans[sensor_name];
-                        if ((sensor_details.input == 0 && this.parent.include_zero_fans) || sensor_details.input > 0) {
-                            table.add(this.render_fan(sensor_name, sensor_details), { row: table_row, col: table_col });
-                            table_col++;
-                            if (table_col == this.parent.sensors_per_row) {
-                                table_col = 0;
-                                table_row++;
-                            }
-                        }
-                    }
-                    if (this.parent.sensor_type_per_row) {
-                        if (table_col > 0 && table_col < this.parent.sensors_per_row) {
-                            for (; table_col < this.parent.sensors_per_row; table_col++) {
-                                table.add(this.render_blank(), { row: table_row, col: table_col });
-                            }
-                            table_row++;
-                        }
-                        table_col = 0;
-                    }
+            let table_row = 0;
+            let table_col = 0;
+
+            let table = new St.Table( {homogeneous: true} );
+
+            // Fans
+            for (const sensor_name of should_render[chip_name].fans.sort()) {
+                let sensor_details = chip.fans[sensor_name];
+                table.add(this.render_fan(sensor_name, sensor_details), { row: table_row, col: table_col });
+                table_col++;
+                if (table_col == this.parent.sensors_per_row) {
+                    table_col = 0;
+                    table_row++;
                 }
-                
-
-                if (this.parent.include_temps) {
-                    for (const sensor_name of Object.keys(chip.temps).sort()) {
-                        let sensor_details = chip.temps[sensor_name];
-                        if ((sensor_details.input == 0 && this.parent.include_zero_temps) || sensor_details.input > 0) {
-                            table.add(this.render_temperature(sensor_name, sensor_details), { row: table_row, col: table_col });
-                            table_col++;
-                            if (table_col == this.parent.sensors_per_row) {
-                                table_col = 0;
-                                table_row++;
-                            }
-                        }
-                    }
-                    if (this.parent.sensor_type_per_row) {
-                        if (table_col > 0 && table_col < this.parent.sensors_per_row) {
-                            for (; table_col < this.parent.sensors_per_row; table_col++) {
-                                table.add(this.render_blank(), { row: table_row, col: table_col });
-                            }
-                            table_row++;
-                        }
-                        table_col = 0;
-                    }
-                }
-
-
-                if (this.parent.include_temps) {
-                    for (const sensor_name of Object.keys(chip.volts).sort()) {
-                        let sensor_details = chip.volts[sensor_name];
-                        if ((sensor_details.input == 0 && this.parent.include_zero_volts) || sensor_details.input > 0) {
-                            table.add(this.render_voltage(sensor_name, sensor_details), { row: table_row, col: table_col });
-
-                            table_col++;
-                            if (table_col == this.parent.sensors_per_row) {
-                                table_col = 0;
-                                table_row++;
-                            }
-                        }
-                    }
-                }
-
-                // Fill out the rest of the table
+            }
+            if (this.parent.sensor_type_per_row) {
                 if (table_col > 0 && table_col < this.parent.sensors_per_row) {
                     for (; table_col < this.parent.sensors_per_row; table_col++) {
                         table.add(this.render_blank(), { row: table_row, col: table_col });
                     }
+                    table_row++;
                 }
-
-                container.add(table);
+                table_col = 0;
             }
+            
+
+            // Temperature
+            for (const sensor_name of should_render[chip_name].temps.sort()) {
+                let sensor_details = chip.temps[sensor_name];
+                table.add(this.render_temperature(sensor_name, sensor_details), { row: table_row, col: table_col });
+                table_col++;
+                if (table_col == this.parent.sensors_per_row) {
+                    table_col = 0;
+                    table_row++;
+                }
+            }
+            if (this.parent.sensor_type_per_row) {
+                if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                    for (; table_col < this.parent.sensors_per_row; table_col++) {
+                        table.add(this.render_blank(), { row: table_row, col: table_col });
+                    }
+                    table_row++;
+                }
+                table_col = 0;
+            }
+
+
+            // Voltages
+            for (const sensor_name of should_render[chip_name].volts.sort()) {
+                let sensor_details = chip.volts[sensor_name];
+                table.add(this.render_voltage(sensor_name, sensor_details), { row: table_row, col: table_col });
+
+                table_col++;
+                if (table_col == this.parent.sensors_per_row) {
+                    table_col = 0;
+                    table_row++;
+                }
+            }
+
+            // // Fill out the rest of the table
+            if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                for (; table_col < this.parent.sensors_per_row; table_col++) {
+                    table.add(this.render_blank(), { row: table_row, col: table_col });
+                }
+            }
+
+            container.add(table);
         }
 
         return container;
+    },
+
+    filter_sensors: function(devices) {
+        if (!devices) return {};
+
+        let result = {};
+        for (const chip_name of Object.keys(devices)) {
+            let chip = devices[chip_name];
+            let sensors = { fans: [], temps: [], volts: [] };
+            let sensor_count = 0;
+
+            if (this.parent.include_fans) {
+                for (const sensor_name of Object.keys(chip.fans).sort()) {
+                    let sensor = chip.fans[sensor_name];
+
+                    if ((sensor.input == 0 && this.parent.include_zero_fans) || sensor.input > 0) {
+                        sensor_count++;
+                        sensors.fans.push(sensor_name);
+                    }
+                }
+            }
+
+            if (this.parent.include_temps) {
+                for (const sensor_name of Object.keys(chip.temps).sort()) {
+                    let sensor = chip.temps[sensor_name];
+
+                    if ((sensor.input == 0 && this.parent.include_zero_temps) || sensor.input > 0) {
+                        sensor_count++;
+                        sensors.temps.push(sensor_name);
+                    }
+                }
+            }
+
+            if (this.parent.include_volts) {
+                for (const sensor_name of Object.keys(chip.volts).sort()) {
+                    let sensor = chip.volts[sensor_name];
+
+                    if ((sensor.input == 0 && this.parent.include_zero_volts) || sensor.input > 0) {
+                        sensor_count++;
+                        sensors.volts.push(sensor_name);
+                    }
+                }
+            }
+
+
+            if (sensor_count > 0) {
+                result[chip_name] = sensors;
+            }
+        }
+        return result;
     },
 
     render_fact: function(description, key, container) {
