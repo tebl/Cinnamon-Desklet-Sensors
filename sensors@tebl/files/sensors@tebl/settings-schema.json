@@ -15,7 +15,7 @@
         "sensors": {
             "type": "page",
             "title": "Sensors",
-            "sections": [ "section-sensors", "section-filter" ]
+            "sections": [ "section-filter", "section-sensors" ]
         },
         "tuning": {
             "type": "page",
@@ -56,16 +56,16 @@
             "keys": [ "border-color", "border-width" ]
         },
 
-        "section-sensors": {
-            "type": "section",
-            "title": "Sensors",
-            "keys": [ "sensors_per_row", "sensor_type_per_row" ]
-        },
-
         "section-filter": {
             "type": "section",
             "title": "Filter sensors",
             "keys": [ "include_fans", "include_zero_fans", "include_temps", "include_zero_temps", "include_volts", "include_zero_volts" ]
+        },
+
+        "section-sensors": {
+            "type": "section",
+            "title": "Sensor display",
+            "keys": [ "sensors_per_row", "sensor_type_per_row", "color_sensor_normal", "color_sensor_changed", "sensor_changed_duration", "threshold_changed_fans", "threshold_changed_temps", "threshold_changed_volts" ]
         },
 
         "section-tuning": {
@@ -168,6 +168,55 @@
         "type" : "checkbox",
         "default": true,
         "description": "Separate sensor types"
+    },
+    "color_sensor_normal" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(119,118,123)",
+	    "description" : "Sensor colour (normal)"
+    },
+    "color_sensor_changed" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(222,221,218)",
+	    "description" : "Sensor colour (changes)"
+    },
+    "sensor_changed_duration": {
+        "type": "spinbutton",
+        "default": 3,
+        "min": 1,
+        "max": 60,
+        "step": 1,
+        "description": "Sensor change duration",
+        "tooltip": "When a sensor has been considered changed this value determines how long we highlight it. Reduces noise."
+    },
+    "threshold_changed_fans": {
+        "type": "scale",
+        "default": 20,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "description": "Fan sensor change threshold",
+        "tooltip": "Change in RPM before a fan can be considered changed, this allows you to tune out lack of accuracy on measurements.",
+        "dependency": "include_fans"
+    },
+    "threshold_changed_temps": {
+        "type": "scale",
+        "default": 1.0,
+        "min": 0,
+        "max": 5,
+        "step": 0.1,
+        "description": "Temperature sensor change threshold",
+        "tooltip": "Change in RPM before a fan can be considered changed, this allows you to tune out lack of accuracy on measurements.",
+        "dependency": "include_temps"
+    },
+    "threshold_changed_volts": {
+        "type": "scale",
+        "default": 0.2,
+        "min": 0,
+        "max": 5,
+        "step": 0.1,
+        "description": "Voltage sensor change threshold",
+        "tooltip": "Change in voltage before a sensor can be considered changed, this allows you to tune out lack of accuracy on measurements.",
+        "dependency": "include_volts"
     },
 
     "include_fans" : {

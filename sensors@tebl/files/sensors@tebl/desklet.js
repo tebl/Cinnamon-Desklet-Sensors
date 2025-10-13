@@ -64,6 +64,13 @@ SensorsDesklet.prototype = {
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "color_sensor_normal", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_changed", "color_sensor_changed", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_changed_duration", "sensor_changed_duration", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_fans", "threshold_changed_fans", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_temps", "threshold_changed_temps", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_volts", "threshold_changed_volts", this.on_display_changed);
+
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_fans", "include_fans", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_fans", "include_zero_fans", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_temps", "include_temps", this.on_display_changed);
@@ -579,13 +586,12 @@ DataView.prototype = {
 
             let table_row = 0;
             let table_col = 0;
-
             let table = new St.Table( {homogeneous: true} );
 
             // Fans
             for (const sensor_name of should_render[chip_name].fans.sort()) {
                 let sensor_details = chip.fans[sensor_name];
-                table.add(this.render_fan(sensor_name, sensor_details), { row: table_row, col: table_col });
+                table.add(this.render_fan(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
                     table_col = 0;
@@ -601,12 +607,11 @@ DataView.prototype = {
                 }
                 table_col = 0;
             }
-            
 
             // Temperature
             for (const sensor_name of should_render[chip_name].temps.sort()) {
                 let sensor_details = chip.temps[sensor_name];
-                table.add(this.render_temperature(sensor_name, sensor_details), { row: table_row, col: table_col });
+                table.add(this.render_temperature(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
                     table_col = 0;
@@ -623,11 +628,10 @@ DataView.prototype = {
                 table_col = 0;
             }
 
-
             // Voltages
             for (const sensor_name of should_render[chip_name].volts.sort()) {
                 let sensor_details = chip.volts[sensor_name];
-                table.add(this.render_voltage(sensor_name, sensor_details), { row: table_row, col: table_col });
+                table.add(this.render_voltage(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
 
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
@@ -719,31 +723,33 @@ DataView.prototype = {
         return new St.Label({ text: "" });
     },
 
-    render_fan: function(sensor_name, details) {
-        return this.render_sensor(sensor_name, details.input + " RPM", "fan");
+    render_fan: function(chip_name, sensor_name, details) {
+        let description = details.input + " RPM";
+        return this.render_sensor(chip_name, "fans", sensor_name, details.input, description, "fan");
     },
 
-    render_temperature: function(sensor_name, details) {
-        let value = details.input;
-        if (value != 0) {
-            value = details.input.toFixed(1) + icons.degrees_c;
+    render_temperature: function(chip_name, sensor_name, details) {
+        let description = details.input;
+        if (description != 0) {
+            description = details.input.toFixed(1) + icons.degrees_c;
         } else {
-            value = "-";
+            description = "-";
         }
 
-        return this.render_sensor(sensor_name, value, "temperature-medium");
+        return this.render_sensor(chip_name, "temps", sensor_name, details.input, description, "temperature-medium");
     },
 
-    render_voltage: function(sensor_name, details) {
-        let value = details.input;
-        if (value != 0) {
-            value = details.input.toFixed(1);
+    render_voltage: function(chip_name, sensor_name, details) {
+        let description = details.input;
+        if (description != 0) {
+            description = details.input.toFixed(1);
         }
+        description = description + "V";
 
-        return this.render_sensor(sensor_name, value + "V", "volt");
+        return this.render_sensor(chip_name, "volts", sensor_name, details.input, description, "volt");
     },
 
-    render_sensor: function(sensor_name, sensor_value, icon_name) {
+    render_sensor: function(chip_name, sensor_type, sensor_name, sensor_value, description, icon_name) {
         let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
 
         let path = GLib.build_filenamev([ DESKLET_DIR, "img", this.parent.setting_icon_theme, icon_name + ".svg" ]);
@@ -755,12 +761,61 @@ DataView.prototype = {
             })
         );
 
+        let style = this.get_sensor_style(chip_name, sensor_type, sensor_name, sensor_value);
+
         let text_box = new St.BoxLayout({ vertical: true });
         text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name" }), { expand: true });
-        text_box.add(new St.Label({ text: sensor_value, style_class: "sensor_value" }), { expand: true });
+        text_box.add(new St.Label({ text: description, style_class: "sensor_value", style: style }), { expand: true });
         box.add(text_box);
 
         return box;
+    },
+
+    get_sensor_style: function(chip_name, sensor_type, sensor_name, sensor_value) {
+        let key = "sensors." + chip_name + "." + sensor_name;
+
+        let previous = this.parent.facts.get(key);
+        if (previous == undefined) {
+            this.parent.facts.set(key, sensor_value, this.parent.read_sensors_expiration);
+            return "color: " + this.parent.color_sensor_normal;
+        }
+
+        if (this.check_difference_exceeded(key, sensor_type, sensor_name, sensor_value, previous)) {
+            return "color: " + this.parent.color_sensor_changed;
+        }
+
+        return "color: " + this.parent.color_sensor_normal;
+    },
+
+    check_difference_exceeded: function(key, sensor_type, sensor_name, sensor_value, previous) {
+        const key_duration = key + ".sticky";
+        if (sensor_value === previous) return this.parent.facts.is_valid(key_duration, true);
+
+        let limit = this.get_sensor_changed_threshold(sensor_type);
+        if (limit < 0) return false;
+
+        this.parent.facts.set(key, sensor_value, this.parent.read_sensors_expiration);
+        const difference = Math.abs(sensor_value - previous);
+        if (difference > limit) {
+            this.parent.facts.set(key_duration, sensor_value, this.parent.sensor_changed_duration);
+            this.parent.log_debug(sensor_name + ": " + previous + " -> " + sensor_value + " (" + difference.toFixed(1) + ")");
+            return true;
+        }
+
+        return this.parent.facts.is_valid(key_duration, true);
+    },
+
+    get_sensor_changed_threshold: function(sensor_type) {
+        switch (sensor_type) {
+            case "fans":
+                return this.parent.threshold_changed_fans;
+            case "temps":
+                return this.parent.threshold_changed_temps;
+            case "volts":
+                return this.parent.threshold_changed_volts;
+        }
+
+        return -1;
     },
 
     render_header: function(title, container) {
