@@ -379,7 +379,7 @@ SensorsDesklet.prototype = {
         const list = new DataView(this.id, this);
         this.main_box.add(list.render());
 
-        this.status_label(this.main_box);
+        this.add_status_label(this.main_box);
         this.setContent(this.main_box);
     },
 
@@ -396,16 +396,16 @@ SensorsDesklet.prototype = {
         }
     },
 
-    status_label: function(parent) {
+    add_status_label: function(parent) {
         const label = new St.Label({
             text: "",
             style_class: "label-status"
         });
 
-        let fact = this.facts.get("status", true);
+        let fact = this.get_status();
         if (fact) {
             label.text = fact.message;
-            if (fact.level < 10) {
+            if (fact.level < this.status_level_info) {
                 label.style_class = "label-error";
             }
 
@@ -447,15 +447,37 @@ SensorsDesklet.prototype = {
         global.logError(DESKLET_UUID + " [" + this.id + "] " + msg);
     },
 
-    status_expiration: 10,
-    set_error: function(message, expiration = this.status_expiration) {
-        this.facts.set("status", { level: 0, message: message }, expiration);
+    status_default_expiration: 10,
+    get_status: function() {
+        let fact = this.facts.get("status", true);
+
+        if (fact && fact.clear_on) {
+            if (this.facts.get(fact.clear_on, true)) {
+                this.facts.unset("status");
+                fact = undefined;
+            }
+        }
+
+        return fact;
     },
 
-    set_message: function(message, expiration = this.status_expiration) {
+    status_level_error: 0,
+    set_error: function(message, options = {}, expiration = this.status_default_expiration) {
+        this._set_status(message, 0, expiration, options);
+    },
+
+    status_level_info: 10,
+    set_message: function(message, options = {}, expiration = this.status_default_expiration) {
+        this._set_status(message, 10, expiration, options);
+    },
+
+    _set_status: function(message, level, expiration, options = {}) {
+        options.message = message;
+        options.level = level;
+
         let fact = this.facts.get("status", true);
         if (!fact || fact.level < level) {
-            this.facts.set("status", { level: 10, message: message }, expiration);
+            this.facts.set("status", options, expiration);
         }
     },
 
@@ -464,7 +486,7 @@ SensorsDesklet.prototype = {
         if (delay_seconds) {
             this.facts.set("delay_loading", delay_seconds, delay_seconds);
         }
-        this.set_message("loading...", 5);
+        this.set_message("loading...", { clear_on: "sensors.devices" }, 5);
     }
 }
 
@@ -578,6 +600,13 @@ DataView.prototype = {
 
         let devices = this.parent.facts.get("sensors.devices");
         let should_render = this.filter_sensors(devices);
+
+        if (devices && Object.keys(should_render).length == 0) {
+            this.parent.set_message("No sensors to display...", { clear_on: "sensor_data" });
+            return container;
+        } else {
+            this.parent.facts.set("sensor_data", true, this.parent.setting_delay);
+        }
 
         let chip_keys = Object.keys(should_render).sort();
         for (const chip_name of chip_keys) {
@@ -703,20 +732,8 @@ DataView.prototype = {
         return result;
     },
 
-    render_fact: function(description, key, container) {
-        let value = this.parent.facts.get(key);
-        if (value) {
-            this.render_line(description, value, container);
-        }
-    },
-
-    render_line: function(description, value, container) {
-        let box = new St.BoxLayout( { vertical: false } );
-
-        box.add(new St.Label({ text: description + ": ", style_class: "fact-description" }), { expand: false });
-        box.add(new St.Label({ text: value, style_class: "fact-value" }), { expand: true });
-
-        container.add(box, { });
+    render_text: function(description) {
+        return new St.Label({ text: description });
     },
 
     render_blank: function() {
