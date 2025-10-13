@@ -58,11 +58,18 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-color", "setting_background_color", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background-transparency", "setting_background_transparency", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "icon-theme", "setting_icon_theme", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "icon-size", "setting_icon_size", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-width", "setting_border_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_fans", "include_fans", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_fans", "include_zero_fans", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_temps", "include_temps", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_temps", "include_zero_temps", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_volts", "include_volts", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_volts", "include_zero_volts", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "enable_debug", "enable_debug", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "read_sensors_expiration", "read_sensors_expiration", this.on_settings_changed);
@@ -344,34 +351,6 @@ SensorsDesklet.prototype = {
         return undefined;
     },
 
-    // format_memory_sizes: [
-    //     [ "KB", 1024 ],
-    //     [ "MB", 1024*1024 ],
-    //     [ "GB", 1024*1024*1024 ],
-    //     [ "TB", 1024*1024*1024*1024 ]
-    // ],
-    // format_memory_usage: function(bytes_used, bytes_total) {
-    //     let set_unit = "B";
-    //     let set_divider = "1";
-
-    //     for (const [test_unit, test_divider] of this.format_memory_sizes) {
-    //         if ((bytes_total/test_divider) > 1) {
-    //             set_unit = test_unit;
-    //             set_divider = test_divider;
-    //         }
-    //     }
-
-    //     let percent = Math.round((bytes_used * 100) / bytes_total);
-    //     return percent + "% (" + this.format_memory_unit(bytes_used, set_unit, set_divider) + "/" + this.format_memory_unit(bytes_total, set_unit, set_divider, true) + ")";
-    // },
-
-    // format_memory_unit: function(value, set_unit, set_divider, squash_point_zero = false) {
-    //     let number = value / set_divider;
-    //     let decimals = 1;
-    //     if ((Math.round(number) * set_divider) == value && squash_point_zero) decimals = 0;
-    //     return number.toFixed(decimals) + " " + set_unit;
-    // },
-
     set_timer: function() {
         this.timeout = Mainloop.timeout_add_seconds(this.setting_delay, Lang.bind(this, this.on_data_changed));
     },
@@ -600,53 +579,66 @@ DataView.prototype = {
                 let table_col = 0;
 
                 let table = new St.Table( {homogeneous: true} );
-                for (const sensor_name of Object.keys(chip.fans).sort()) {
-                    table.add(this.render_fan(sensor_name, chip.fans[sensor_name]), { row: table_row, col: table_col });
-
-                    table_col++;
-                    if (table_col == this.parent.sensors_per_row) {
-                        table_col = 0;
-                        table_row++;
-                    }
-                }
-                if (this.parent.sensor_type_per_row) {
-                    if (table_col > 0 && table_col < this.parent.sensors_per_row) {
-                        for (; table_col < this.parent.sensors_per_row; table_col++) {
-                            table.add(this.render_blank(), { row: table_row, col: table_col });
+                if (this.parent.include_fans) {
+                    for (const sensor_name of Object.keys(chip.fans).sort()) {
+                        let sensor_details = chip.fans[sensor_name];
+                        if ((sensor_details.input == 0 && this.parent.include_zero_fans) || sensor_details.input > 0) {
+                            table.add(this.render_fan(sensor_name, sensor_details), { row: table_row, col: table_col });
+                            table_col++;
+                            if (table_col == this.parent.sensors_per_row) {
+                                table_col = 0;
+                                table_row++;
+                            }
                         }
-                        table_row++;
                     }
-                    table_col = 0;
+                    if (this.parent.sensor_type_per_row) {
+                        if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                            for (; table_col < this.parent.sensors_per_row; table_col++) {
+                                table.add(this.render_blank(), { row: table_row, col: table_col });
+                            }
+                            table_row++;
+                        }
+                        table_col = 0;
+                    }
                 }
                 
 
-                for (const sensor_name of Object.keys(chip.temps).sort()) {
-                    table.add(this.render_temperature(sensor_name, chip.temps[sensor_name]), { row: table_row, col: table_col });
-
-                    table_col++;
-                    if (table_col == this.parent.sensors_per_row) {
-                        table_col = 0;
-                        table_row++;
-                    }
-                }
-                if (this.parent.sensor_type_per_row) {
-                    if (table_col > 0 && table_col < this.parent.sensors_per_row) {
-                        for (; table_col < this.parent.sensors_per_row; table_col++) {
-                            table.add(this.render_blank(), { row: table_row, col: table_col });
+                if (this.parent.include_temps) {
+                    for (const sensor_name of Object.keys(chip.temps).sort()) {
+                        let sensor_details = chip.temps[sensor_name];
+                        if ((sensor_details.input == 0 && this.parent.include_zero_temps) || sensor_details.input > 0) {
+                            table.add(this.render_temperature(sensor_name, sensor_details), { row: table_row, col: table_col });
+                            table_col++;
+                            if (table_col == this.parent.sensors_per_row) {
+                                table_col = 0;
+                                table_row++;
+                            }
                         }
-                        table_row++;
                     }
-                    table_col = 0;
+                    if (this.parent.sensor_type_per_row) {
+                        if (table_col > 0 && table_col < this.parent.sensors_per_row) {
+                            for (; table_col < this.parent.sensors_per_row; table_col++) {
+                                table.add(this.render_blank(), { row: table_row, col: table_col });
+                            }
+                            table_row++;
+                        }
+                        table_col = 0;
+                    }
                 }
 
 
-                for (const sensor_name of Object.keys(chip.volts).sort()) {
-                    table.add(this.render_voltage(sensor_name, chip.volts[sensor_name]), { row: table_row, col: table_col });
+                if (this.parent.include_temps) {
+                    for (const sensor_name of Object.keys(chip.volts).sort()) {
+                        let sensor_details = chip.volts[sensor_name];
+                        if ((sensor_details.input == 0 && this.parent.include_zero_volts) || sensor_details.input > 0) {
+                            table.add(this.render_voltage(sensor_name, sensor_details), { row: table_row, col: table_col });
 
-                    table_col++;
-                    if (table_col == this.parent.sensors_per_row) {
-                        table_col = 0;
-                        table_row++;
+                            table_col++;
+                            if (table_col == this.parent.sensors_per_row) {
+                                table_col = 0;
+                                table_row++;
+                            }
+                        }
                     }
                 }
 
@@ -716,7 +708,7 @@ DataView.prototype = {
         let gicon = new Gio.FileIcon({ file: icon });
         box.add_actor(
             new St.Icon({
-                gicon: gicon, icon_size: 32, icon_type: St.IconType.SYMBOLIC, style: "margin-right: 10px"
+                gicon: gicon, icon_size: this.parent.setting_icon_size, icon_type: St.IconType.SYMBOLIC, style_class: "sensor_icon"
             })
         );
 
@@ -728,44 +720,8 @@ DataView.prototype = {
         return box;
     },
 
-    create_cell_icon: function(module, details) {
-        let label = new St.Label({
-            style_class: "label-icon",
-            style: "margin-left: 10px;"
-        });
-
-        switch (details.status) {
-            case "OK": 
-                label.text = icons.box_checked; 
-                break;
-            case "BLOCK": 
-                label.text = icons.box_crossed; 
-                break;
-            case "FOUND":
-                label.text = icons.box_empty;
-                break;
-            case "MISSING":
-            default:
-                label.text = icons.box_crossed;
-                break;
-        }
-
-        return label;
-    },
-
-    create_cell_name: function(module, details) {
-        return new St.Label({
-            text: module,
-            style_class: "label-modules-" + module.replace('_', '-')
-        });
-    },
-
     render_header: function(title, container) {
-        let box = new St.BoxLayout( { vertical: false } );
-
-        box.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
-
-        container.add(box, { });
+        container.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
     }
 }
 

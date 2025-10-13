@@ -24,6 +24,10 @@
   padding-right: 5px;
 }
 
+.sensor_icon {
+  margin-right: 5px;
+}
+
 .sensor_name {
   margin-top: 3px;
 }

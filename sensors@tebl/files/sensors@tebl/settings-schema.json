@@ -15,7 +15,7 @@
         "sensors": {
             "type": "page",
             "title": "Sensors",
-            "sections": [ "section-sensors" ]
+            "sections": [ "section-sensors", "section-filter" ]
         },
         "tuning": {
             "type": "page",
@@ -48,7 +48,7 @@
         "section-background": {
             "type": "section",
             "title": "Background",
-            "keys": [ "background-color", "background-transparency", "icon-theme" ]
+            "keys": [ "background-color", "background-transparency", "icon-theme", "icon-size" ]
         },
         "section-border": {
             "type": "section",
@@ -60,6 +60,12 @@
             "type": "section",
             "title": "Sensors",
             "keys": [ "sensors_per_row", "sensor_type_per_row" ]
+        },
+
+        "section-filter": {
+            "type": "section",
+            "title": "Filter sensors",
+            "keys": [ "include_fans", "include_zero_fans", "include_temps", "include_zero_temps", "include_volts", "include_zero_volts" ]
         },
 
         "section-tuning": {
@@ -164,6 +170,42 @@
         "description": "Separate sensor types"
     },
 
+    "include_fans" : {
+        "type" : "checkbox",
+        "default": true,
+        "description": "Enable fan sensors"
+    },
+    "include_zero_fans": {
+        "type" : "checkbox",
+        "default": true,
+        "description": "Include sensors reading 0 RPM",
+        "dependency": "include_fans"
+    },
+
+    "include_temps" : {
+        "type" : "checkbox",
+        "default": true,
+        "description": "Enable temperature sensors"
+    },
+    "include_zero_temps": {
+        "type" : "checkbox",
+        "default": false,
+        "description": "Include sensors reading 0\u2103",
+        "dependency": "include_temps"
+    },
+
+    "include_volts" : {
+        "type" : "checkbox",
+        "default": true,
+        "description": "Enable voltage sensors"
+    },
+    "include_zero_volts": {
+        "type" : "checkbox",
+        "default": false,
+        "description": "Include sensors reading 0V",
+        "dependency": "include_volts"
+    },
+
     "tuning_about": {
         "type": "label",
         "description": "This page allows you to tune how often certain information elements should be updated, time is specified in number of seconds. Note that the expiration of these will only be evaluated at certain intervals as specified by 'delay' on the first configuration-page."
@@ -214,6 +256,15 @@
             "Dark Mode" : "dark",
             "Light Mode" : "light"
         }
+    },
+    "icon-size" : {
+     "type" : "scale",
+        "default" : 32,
+        "min" : 16,
+        "max" : 64,
+        "step" : 1,
+        "show-value" : true,
+        "description" : "Icon size in pixels"
     },
 
     "border-color": {
