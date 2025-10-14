@@ -62,6 +62,8 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-width", "setting_border_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
 
+        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "color_sensor_normal", this.on_display_changed);
@@ -687,12 +689,15 @@ DataView.prototype = {
 
         let result = {};
         for (const chip_name of Object.keys(devices)) {
+            if (!this.is_chip_enabled(chip_name)) continue;
+
             let chip = devices[chip_name];
             let sensors = { fans: [], temps: [], volts: [] };
             let sensor_count = 0;
 
             if (this.parent.include_fans) {
                 for (const sensor_name of Object.keys(chip.fans).sort()) {
+                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
                     let sensor = chip.fans[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_fans) || sensor.input > 0) {
@@ -704,6 +709,7 @@ DataView.prototype = {
 
             if (this.parent.include_temps) {
                 for (const sensor_name of Object.keys(chip.temps).sort()) {
+                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
                     let sensor = chip.temps[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_temps) || sensor.input > 0) {
@@ -715,6 +721,7 @@ DataView.prototype = {
 
             if (this.parent.include_volts) {
                 for (const sensor_name of Object.keys(chip.volts).sort()) {
+                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
                     let sensor = chip.volts[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_volts) || sensor.input > 0) {
@@ -730,6 +737,96 @@ DataView.prototype = {
             }
         }
         return result;
+    },
+
+    is_chip_enabled: function(chip_name) {
+        if (!this.parent.setting_filter_enabled) return true;
+
+        for (let input_rule of this.parent.setting_filter_rules.split("\n")) {
+            let [is_negative, rule] = this.parse_rule(input_rule);
+            if (!rule) continue;
+
+            // Skip sensor rules
+            if (rule.indexOf(":") > -1) continue;
+
+            if (this.rule_matches(rule, chip_name)) {
+                if (is_negative) {
+                    return false;
+                }
+                return true;
+            }
+        }
+
+        return false;
+    },
+
+    is_sensor_enabled: function(chip_name, sensor_name) {
+        if (!this.parent.setting_filter_enabled) return true;
+        let matched_chip = false;
+
+        // this does not work.... probably because we're matching two different statements, expecting that one to match both
+        for (let input_rule of this.parent.setting_filter_rules.split("\n")) {
+            let [is_negative, rule] = this.parse_rule(input_rule);
+            if (!rule) continue;
+
+            // Match all sensors
+            if (rule == "*:*") return true;
+
+            // Detect chip rules
+            let index = rule.indexOf(":");
+            if (index < 0) continue;
+
+            let chip_part = rule.slice(0, index);
+            let sensor_part = rule.slice(index + 1);
+
+            // Don't want to apply a negative rule all over the place
+            if (is_negative && chip_part == "*") continue;
+
+            // Skip if we can't match the chip
+            if (!this.rule_matches(chip_part, chip_name)) continue;
+            matched_chip = true;
+
+            if (this.rule_matches(sensor_part, sensor_name)) {
+                // this.parent.log_error(rule + " matches " + chip_name + "," + sensor_name + "")
+                if (is_negative) {
+                    return false;
+                }
+                return true;
+            }
+        }
+        
+        if (matched_chip) return true;
+        return false;
+    },
+
+    parse_rule: function(rule) {
+        let negative = false;
+        rule = rule.trim();
+
+        if (rule[0] == "!") {
+            rule = rule.slice(1);
+            negative = true;
+        }
+
+        if ([ ";", "#" ].includes(rule[0])) {
+            rule = undefined;
+        }
+
+        return [negative, rule];
+    },
+
+    rule_matches: function(rule, name) {
+        // Match all
+        if (rule == "*") return true;
+
+        // Match one
+        if (rule == name) return true;
+
+        // Match string starting with
+        let index = rule.indexOf("*");
+        if (index > -1 && name.startsWith(rule.slice(0, index))) return true;
+
+        return false;
     },
 
     render_text: function(description) {

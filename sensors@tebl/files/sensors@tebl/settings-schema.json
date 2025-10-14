@@ -1,7 +1,7 @@
 {
     "layout1": {
         "type": "layout",
-        "pages": [ "general", "appearance", "sensors", "tuning" ],
+        "pages": [ "general", "appearance", "filter", "sensors", "tuning" ],
         "general": {
             "type": "page",
             "title": "Desklet",
@@ -12,10 +12,15 @@
             "title": "Appearance",
             "sections": [ "section-appearance", "section-font", "section-background", "section-border" ]
         },
+        "filter": {
+            "type": "page",
+            "title": "Filter",
+            "sections": [ "section-filter", "section-filter-hints" ]
+        },
         "sensors": {
             "type": "page",
             "title": "Sensors",
-            "sections": [ "section-filter", "section-sensors" ]
+            "sections": [ "section-sensors-filter", "section-sensors-display" ]
         },
         "tuning": {
             "type": "page",
@@ -58,11 +63,23 @@
 
         "section-filter": {
             "type": "section",
+            "title": "Filter",
+            "keys": [ "filter_enabled", "filter_rules" ]
+        },
+
+        "section-filter-hints": {
+            "type": "section",
+            "title": "Rule composition hints",
+            "keys": [ "filter_hint_order", "filter_hint_asterisk", "filter_hint_colon", "filter_hint_exclamation" ]
+        },
+
+        "section-sensors-filter": {
+            "type": "section",
             "title": "Filter sensors",
             "keys": [ "include_fans", "include_zero_fans", "include_temps", "include_zero_temps", "include_volts", "include_zero_volts" ]
         },
 
-        "section-sensors": {
+        "section-sensors-display": {
             "type": "section",
             "title": "Sensor display",
             "keys": [ "sensors_per_row", "sensor_type_per_row", "color_sensor_normal", "color_sensor_changed", "sensor_changed_duration", "threshold_changed_fans", "threshold_changed_temps", "threshold_changed_volts" ]
@@ -155,6 +172,36 @@
         "description": "Hide decorations",
         "default": true
     },
+
+    "filter_enabled": {
+        "type" : "checkbox",
+        "default": false,
+        "description": "Enable rules"
+    },
+    "filter_rules": {
+        "type": "textview",
+        "height": 300,
+        "default": "# Chip rules:\n!ignored_chip*\n*\n\n# Sensor rules:\n!other_chip:faulty_sensor*\n*:*",
+        "description": "Filter rules",
+        "dependency": "filter_enabled"
+    },
+
+    "filter_hint_order": {
+        "type": "label",
+        "description": "First matching rule is used, they are processed in the order they are listed in. It's recommended to use a catch-all such as '*' and '*.*' as the last rule, then add any explicit exclusions before it."
+    },    
+    "filter_hint_asterisk": {
+        "type": "label",
+        "description": "An asterisk ('*') can be used when you want to match any entry starting with the same string preceding it. Example: 'amd*' will enable all chips starting with 'amd'."
+    },    
+    "filter_hint_colon": {
+        "type": "label",
+        "description": "A colon (':') is used to separate two filter rules, allowing you to additionally filter specific sensors. When used without one, you're filtering chip names instead. Example: to only list sensors starting with 'vdd' from a chip starting with 'amd', you can specify 'amd*:vdd*'"
+    },    
+    "filter_hint_exclamation": {
+        "type": "label",
+        "description": "An exclamation point ('!'), when used as the first character, can be used to explicitly negate entries - when applied to sensor entries this only applies to sensors belonging to enabled sensors."
+    },    
 
     "sensors_per_row": {
         "type": "spinbutton",
