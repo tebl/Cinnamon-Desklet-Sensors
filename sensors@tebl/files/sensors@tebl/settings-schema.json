@@ -333,7 +333,8 @@
         "default" : "dark",
         "options" : {
             "Dark Mode" : "dark",
-            "Light Mode" : "light"
+            "Light Mode" : "light",
+            "Static" : "static"
         }
     },
     "icon-size" : {

@@ -741,6 +741,14 @@ DataView.prototype = {
         return result;
     },
 
+    /* Rules are processed in the order they are written, and while it's
+     * probably easier to use a catch-all '*' as the very last entry - you also
+     * have the option to explicitly list the ones you want. Sensors are
+     * processed separately, but naturally won't be included if the chip isn't
+     * considered to be enabled. Negative matches can be added with '!' at the
+     * start, this would remove any chips matched (as long as it is encountered
+     * BEFORE any catch-all statements).
+     */
     is_chip_enabled: function(chip_name) {
         if (!this.parent.setting_filter_enabled) return true;
 
@@ -762,6 +770,15 @@ DataView.prototype = {
         return false;
     },
 
+    /* Functions in the same manner as is_chip_enabled, except now we're
+     * matching sensor rules specified with the format: chip_rule:sensor_rule
+     *
+     * The main difference is that we can't match sensors to chips already
+     * ruled out earlier in is_chip_enabled. Note that with the use of a
+     * negative sensor statement, there's an implicit 'chip_name:*' in the
+     * way they are processed (this keeps the other sensors from disappearing
+     * when attempting to remove a specific sensor).
+     */
     is_sensor_enabled: function(chip_name, sensor_name) {
         if (!this.parent.setting_filter_enabled) return true;
         let matched_chip = false;
@@ -788,7 +805,6 @@ DataView.prototype = {
             matched_chip = true;
 
             if (this.check_rule_matches(sensor_part, sensor_name)) {
-                // this.parent.log_error(rule + " matches " + chip_name + "," + sensor_name + "")
                 if (is_negative) {
                     return false;
                 }
