@@ -94,13 +94,13 @@
         "type": "button",
         "description": "Set 'Dark Mode'",
         "callback": "on_set_dark_mode",
-        "dependency": "icon-theme=light"
+        "dependency": "icon-theme!=dark"
     },
     "light_mode": {
         "type": "button",
         "description": "Set 'Light Mode'",
         "callback": "on_set_light_mode",
-        "dependency": "icon-theme=dark"
+        "dependency": "icon-theme!=light"
     },
 
     "delay": {
