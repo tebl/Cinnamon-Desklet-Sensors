@@ -4,8 +4,8 @@
         "pages": [ "general", "appearance", "filter", "sensors", "tuning" ],
         "general": {
             "type": "page",
-            "title": "Desklet",
-            "sections": [ "section-general", "section-debugging" ]
+            "title": "General",
+            "sections": [ "section-general", "section-themes", "section-debugging" ]
         },
         "appearance": {
             "type": "page",
@@ -33,7 +33,11 @@
             "title": "Desklet",
             "keys": [ "delay", "show_updated", "show_actual_updated" ]
         },
-
+        "section-themes": {
+            "type": "section",
+            "title": "Themes",
+            "keys": [ "dark_mode", "light_mode" ]
+        },
         "section-debugging": {
             "type": "section",
             "title": "Debugging",
@@ -43,7 +47,7 @@
         "section-appearance": {
             "type": "section",
             "title": "Appearance",
-            "keys": [ "set_width", "width", "set_height", "height", "hide-decorations", "reserve_status" ]
+            "keys": [ "set_width", "width", "set_height", "height", "hide-decorations", "reserve_status", "icon-theme", "icon-size" ]
         },
         "section-font": {
             "type": "section",
@@ -53,7 +57,7 @@
         "section-background": {
             "type": "section",
             "title": "Background",
-            "keys": [ "background-color", "background-transparency", "icon-theme", "icon-size" ]
+            "keys": [ "background-color", "background-transparency" ]
         },
         "section-border": {
             "type": "section",
@@ -86,6 +90,19 @@
         }
     },
 
+    "dark_mode": {
+        "type": "button",
+        "description": "Set 'Dark Mode'",
+        "callback": "on_set_dark_mode",
+        "dependency": "icon-theme=light"
+    },
+    "light_mode": {
+        "type": "button",
+        "description": "Set 'Light Mode'",
+        "callback": "on_set_light_mode",
+        "dependency": "icon-theme=dark"
+    },
+
     "delay": {
         "type": "spinbutton",
         "default": 1,
@@ -105,32 +122,32 @@
         "tooltip": "Adds a delay before configuration takes effect, this is in order to avoid firing off costly processes while actively typing"
     },
     "show_updated": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Show last refresh time",
         "default": false
     },
     "show_actual_updated": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Show update time instead",
         "default": false,
         "dependency": "show_updated",
         "tooltip": "Show the timestamp for the last data collection operation instead of last rendering time"
     },
     "enable_debug": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Enable debugging",
         "default": false,
         "tooltip": "Enable Desklet debugging information (available from 'cinnamon-looking-glass')"
     },
     "reserve_status": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Reserve status",
         "default": false,
         "tooltip": "Always reserve space for status - this keeps the desklet from bouncing on the screen"
     },
 
     "set_width": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Set Desklet width",
         "default": false,
         "tooltip": "Set DeskLet dimensions manually instead of automatic size"
@@ -146,7 +163,7 @@
         "dependency": "set_width"
     },
     "set_height": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "description": "Set Desklet height",
         "default": false,
         "tooltip": "Set DeskLet dimensions manually instead of automatic size"
@@ -168,7 +185,7 @@
     },
 
     "filter_enabled": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "default": false,
         "description": "Enable rules"
     },
@@ -249,37 +266,35 @@
         "dependency": "include_volts"
     },
 
-    "include_fans" : {
-        "type" : "checkbox",
+    "include_fans": {
+        "type": "checkbox",
         "default": true,
         "description": "Enable fan sensors"
     },
     "include_zero_fans": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "default": true,
         "description": "Include sensors reading 0 RPM",
         "dependency": "include_fans"
     },
-
-    "include_temps" : {
-        "type" : "checkbox",
+    "include_temps": {
+        "type": "checkbox",
         "default": true,
         "description": "Enable temperature sensors"
     },
     "include_zero_temps": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "default": false,
         "description": "Include sensors reading 0\u2103",
         "dependency": "include_temps"
     },
-
-    "include_volts" : {
-        "type" : "checkbox",
+    "include_volts": {
+        "type": "checkbox",
         "default": true,
         "description": "Enable voltage sensors"
     },
     "include_zero_volts": {
-        "type" : "checkbox",
+        "type": "checkbox",
         "default": false,
         "description": "Include sensors reading 0V",
         "dependency": "include_volts"
@@ -327,26 +342,25 @@
         "description": "Transparency",
         "tooltip": "Transparency of the desklet"
     },
-    "icon-theme" : {
-        "type" : "combobox",
-        "description" : "Icon theme",
-        "default" : "dark",
-        "options" : {
-            "Dark Mode" : "dark",
-            "Light Mode" : "light",
-            "Static" : "static"
-        }
+    "icon-theme": {
+        "type": "combobox",
+        "description": "Icon theme",
+        "default": "dark",
+        "options": {
+            "Dark Mode": "dark",
+            "Light Mode": "light"
+        },
+        "tooltip": "Sets the theme used on icons, but note specifically that this option only changes the icons. To set everything accordingly, use theme buttons under 'General'."
     },
-    "icon-size" : {
-     "type" : "scale",
-        "default" : 32,
-        "min" : 16,
-        "max" : 64,
-        "step" : 1,
-        "show-value" : true,
-        "description" : "Icon size in pixels"
+    "icon-size": {
+        "type": "scale",
+        "default": 32,
+        "min": 16,
+        "max": 64,
+        "step": 1,
+        "show-value": true,
+        "description": "Icon size in pixels"
     },
-
     "border-color": {
         "type": "colorchooser",
         "indent": true,

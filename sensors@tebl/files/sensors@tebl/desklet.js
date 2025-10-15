@@ -219,6 +219,24 @@ SensorsDesklet.prototype = {
         }
     },
 
+    on_set_light_mode: function() {
+        this.setting_font_color = "rgb(0,0,0)";
+        this.setting_background_color = "rgb(222,221,218)";
+        this.setting_icon_theme = "light";
+        this.setting_border_color = "rgb(222,221,218)";
+        this.color_sensor_normal = "rgb(119,118,123)";
+        this.color_sensor_changed = "rgb(0,0,0)";
+    },
+
+    on_set_dark_mode: function() {
+        this.setting_font_color = "rgb(222,221,218)";
+        this.setting_background_color = "rgb(0,0,0)";
+        this.setting_icon_theme = "dark";
+        this.setting_border_color = "rgb(0,0,0)";
+        this.color_sensor_normal = "rgb(119,118,123)";
+        this.color_sensor_changed = "rgb(222,221,218)";
+    },
+
     toggle_decorations() {
         this.metadata['prevent-decorations'] = this.hide_decorations;
         this._updateDecoration();
@@ -876,41 +894,34 @@ DataView.prototype = {
     },
 
     render_sensor: function(chip_name, sensor_type, sensor_name, sensor_value, description, icon_name) {
+        let is_active = this.get_sensor_active(chip_name, sensor_type, sensor_name, sensor_value);
+
         let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
+        box.add_actor( this.get_sensor_icon(is_active, icon_name) );
 
-        let path = GLib.build_filenamev([ DESKLET_DIR, "img", this.parent.setting_icon_theme, icon_name + ".svg" ]);
-        let icon = Gio.file_new_for_path( path );
-        let gicon = new Gio.FileIcon({ file: icon });
-        box.add_actor(
-            new St.Icon({
-                gicon: gicon, icon_size: this.parent.setting_icon_size, icon_type: St.IconType.SYMBOLIC, style_class: "sensor_icon"
-            })
-        );
-
-        let style = this.get_sensor_style(chip_name, sensor_type, sensor_name, sensor_value);
-
+        let style = this.get_sensor_style(is_active);
         let text_box = new St.BoxLayout({ vertical: true });
-        text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name" }), { expand: true });
+        text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name", style: style }), { expand: true });
         text_box.add(new St.Label({ text: description, style_class: "sensor_value", style: style }), { expand: true });
         box.add(text_box);
 
         return box;
     },
 
-    get_sensor_style: function(chip_name, sensor_type, sensor_name, sensor_value) {
+    get_sensor_active: function(chip_name, sensor_type, sensor_name, sensor_value) {
         let key = "sensors." + chip_name + "." + sensor_name;
 
         let previous = this.parent.facts.get(key);
         if (previous == undefined) {
             this.parent.facts.set(key, sensor_value, this.parent.read_sensors_expiration);
-            return "color: " + this.parent.color_sensor_normal;
+            return false;
         }
 
         if (this.check_difference_exceeded(key, sensor_type, sensor_name, sensor_value, previous)) {
-            return "color: " + this.parent.color_sensor_changed;
+            return true;
         }
 
-        return "color: " + this.parent.color_sensor_normal;
+        return false;
     },
 
     check_difference_exceeded: function(key, sensor_type, sensor_name, sensor_value, previous) {
@@ -942,6 +953,36 @@ DataView.prototype = {
         }
 
         return -1;
+    },
+
+    get_sensor_icon: function(is_active, icon_name) {
+        let parts = [DESKLET_DIR, "img"];
+        switch (this.parent.setting_icon_theme) {
+            case "dark":
+            case "light":
+                if (is_active) parts.push(this.parent.setting_icon_theme);
+                else  parts.push("medium");
+                break;
+            default:
+                parts.push(this.parent.setting_icon_theme);
+                break;
+        }
+        parts.push(icon_name + ".svg");
+
+        let path = GLib.build_filenamev(parts);
+        let icon = Gio.file_new_for_path(path);
+        let gicon = new Gio.FileIcon({ file: icon });
+        return new St.Icon({
+            gicon: gicon,
+            icon_size: this.parent.setting_icon_size,
+            icon_type: St.IconType.SYMBOLIC,
+            style_class: "sensor_icon"
+        });
+    },
+
+    get_sensor_style: function(is_active) {
+        if (is_active) return "color: " + this.parent.color_sensor_changed;
+        else return "color: " + this.parent.color_sensor_normal;
     },
 
     render_header: function(title, container) {
