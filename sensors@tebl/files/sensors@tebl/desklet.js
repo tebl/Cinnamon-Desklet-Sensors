@@ -9,13 +9,7 @@ const Mainloop = imports.mainloop;
 const Lang = imports.lang;
 const FileUtils = imports.misc.fileUtils;
 
-const icons = { update: "\u27F3", degrees_c: "\u2103" };
-
-// const DESKLET_UUID = "sensors@tebl";
-const DESKLET_UUID = "devtest-sensors@tebl";
-const HOME_DIR = GLib.get_home_dir();
-const DESKLET_DIR = HOME_DIR + "/.local/share/cinnamon/desklets/" + DESKLET_UUID;
-const FORCE_DEBUG = Gio.file_new_for_path(DESKLET_DIR + "/DEBUG").query_exists(null);
+const FORCE_DEBUG = false;
 
 function SensorsDesklet(metadata, desklet_id) {
     this._init(metadata, desklet_id);
@@ -26,6 +20,7 @@ SensorsDesklet.prototype = {
 
     _init: function(metadata, desklet_id) {
         Desklet.Desklet.prototype._init.call(this, metadata, desklet_id);
+        this.desklet_id = desklet_id;
         this.log_debug("Initializing");
         this.setHeader(metadata.name);
 
@@ -41,7 +36,7 @@ SensorsDesklet.prototype = {
     },
 
     load_settings: function() {
-        this.settings = new Settings.DeskletSettings(this, this.metadata.uuid, this.id);
+        this.settings = new Settings.DeskletSettings(this, this.metadata.uuid, this.desklet_id);
         this.settings.bindProperty(Settings.BindingDirection.IN, "delay", "setting_delay", this.on_settings_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "configuration_delay", "configuration_delay", this.on_settings_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "show_updated", "setting_show_updated", this.on_display_changed);
@@ -226,6 +221,7 @@ SensorsDesklet.prototype = {
         this.setting_border_color = "rgb(222,221,218)";
         this.color_sensor_normal = "rgb(119,118,123)";
         this.color_sensor_changed = "rgb(0,0,0)";
+        this.render();
     },
 
     on_set_dark_mode: function() {
@@ -235,6 +231,7 @@ SensorsDesklet.prototype = {
         this.setting_border_color = "rgb(0,0,0)";
         this.color_sensor_normal = "rgb(119,118,123)";
         this.color_sensor_changed = "rgb(222,221,218)";
+        this.render();
     },
 
     toggle_decorations() {
@@ -453,7 +450,7 @@ SensorsDesklet.prototype = {
 
     log_debug: function(msg) {
         if (FORCE_DEBUG || this.enable_debug) {
-            global.log(DESKLET_UUID + " [" + this.id + "] DEBUG " + msg);
+            global.log(this.metadata.uuid + " [" + this.desklet_id + "] DEBUG " + msg);
         }
     },
 
@@ -462,11 +459,11 @@ SensorsDesklet.prototype = {
     },
 
     log_info: function(msg) {
-        global.log(DESKLET_UUID + " [" + this.id + "] " + msg);
+        global.log(this.metadata.uuid + " [" + this.desklet_id + "] " + msg);
     },
 
     log_error: function(msg) {
-        global.logError(DESKLET_UUID + " [" + this.id + "] " + msg);
+        global.logError(this.metadata.uuid + " [" + this.desklet_id + "] " + msg);
     },
 
     status_default_expiration: 10,
@@ -872,10 +869,11 @@ DataView.prototype = {
         return this.render_sensor(chip_name, "fans", sensor_name, details.input, description, "fan");
     },
 
+    icons: { update: "\u27F3", degrees_c: "\u2103" },
     render_temperature: function(chip_name, sensor_name, details) {
         let description = details.input;
         if (description != 0) {
-            description = details.input.toFixed(1) + icons.degrees_c;
+            description = details.input.toFixed(1) + this.icons.degrees_c;
         } else {
             description = "-";
         }
@@ -956,7 +954,7 @@ DataView.prototype = {
     },
 
     get_sensor_icon: function(is_active, icon_name) {
-        let parts = [DESKLET_DIR, "img"];
+        let parts = [this.parent.metadata.path, "img"];
         switch (this.parent.setting_icon_theme) {
             case "dark":
             case "light":
