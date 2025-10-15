@@ -606,10 +606,7 @@ DataView.prototype = {
         let should_render = this.filter_sensors(devices);
 
         if (devices && Object.keys(should_render).length == 0) {
-            this.parent.set_message("No sensors to display...", { clear_on: "sensor_data" });
-            return container;
-        } else {
-            this.parent.facts.set("sensor_data", true, this.parent.setting_delay);
+            return this.render_text("No sensors to display...", container);
         }
 
         let chip_keys = Object.keys(should_render).sort();
@@ -848,10 +845,6 @@ DataView.prototype = {
         return false;
     },
 
-    render_text: function(description) {
-        return new St.Label({ text: description });
-    },
-
     render_blank: function() {
         return new St.Label({ text: "" });
     },
@@ -955,6 +948,11 @@ DataView.prototype = {
         if (!this.parent.suppress_header) {
             container.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
         }
+    },
+
+    render_text: function(description, container) {
+        container.add(new St.Label({ text: description }), { expand: true });
+        return container;
     }
 }
 
