@@ -64,6 +64,8 @@ SensorsDesklet.prototype = {
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_display_changed);
+    
+        this.settings.bindProperty(Settings.BindingDirection.IN, "suppress_header", "suppress_header", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "color_sensor_normal", this.on_display_changed);
@@ -749,7 +751,7 @@ DataView.prototype = {
             // Skip sensor rules
             if (rule.indexOf(":") > -1) continue;
 
-            if (this.rule_matches(rule, chip_name)) {
+            if (this.check_rule_matches(rule, chip_name)) {
                 if (is_negative) {
                     return false;
                 }
@@ -764,7 +766,6 @@ DataView.prototype = {
         if (!this.parent.setting_filter_enabled) return true;
         let matched_chip = false;
 
-        // this does not work.... probably because we're matching two different statements, expecting that one to match both
         for (let input_rule of this.parent.setting_filter_rules.split("\n")) {
             let [is_negative, rule] = this.parse_rule(input_rule);
             if (!rule) continue;
@@ -783,10 +784,10 @@ DataView.prototype = {
             if (is_negative && chip_part == "*") continue;
 
             // Skip if we can't match the chip
-            if (!this.rule_matches(chip_part, chip_name)) continue;
+            if (!this.check_rule_matches(chip_part, chip_name)) continue;
             matched_chip = true;
 
-            if (this.rule_matches(sensor_part, sensor_name)) {
+            if (this.check_rule_matches(sensor_part, sensor_name)) {
                 // this.parent.log_error(rule + " matches " + chip_name + "," + sensor_name + "")
                 if (is_negative) {
                     return false;
@@ -795,7 +796,7 @@ DataView.prototype = {
             }
         }
         
-        if (matched_chip) return true;
+        if (matched_chip) return true; // does this work?
         return false;
     },
 
@@ -803,11 +804,13 @@ DataView.prototype = {
         let negative = false;
         rule = rule.trim();
 
+        // Rule is there to explicitly remove something
         if (rule[0] == "!") {
             rule = rule.slice(1);
             negative = true;
         }
 
+        // Filter commented lines
         if ([ ";", "#" ].includes(rule[0])) {
             rule = undefined;
         }
@@ -815,7 +818,7 @@ DataView.prototype = {
         return [negative, rule];
     },
 
-    rule_matches: function(rule, name) {
+    check_rule_matches: function(rule, name) {
         // Match all
         if (rule == "*") return true;
 
@@ -933,7 +936,9 @@ DataView.prototype = {
     },
 
     render_header: function(title, container) {
-        container.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
+        if (!this.parent.suppress_header) {
+            container.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
+        }
     }
 }
 
