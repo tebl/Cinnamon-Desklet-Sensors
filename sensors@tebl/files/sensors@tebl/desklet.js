@@ -32,6 +32,7 @@ SensorsDesklet.prototype = {
         this.facts_reset();
 
         this.load_settings();
+        this.on_theme_changed();
         this.on_data_changed();
     },
 
@@ -42,20 +43,24 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "show_updated", "setting_show_updated", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "show_actual_updated", "setting_show_actual_updated", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "reserve_status", "setting_reserve_status", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, 'hide_decorations', 'hide_decorations', this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "set_width", "setting_set_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "width", "setting_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "set_height", "setting_set_height", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "height", "setting_height", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, 'hide-decorations', 'hide_decorations', this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "font", "setting_font", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "font-color", "setting_font_color", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "background-color", "setting_background_color", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "background-transparency", "setting_background_transparency", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "icon-theme", "setting_icon_theme", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "icon-size", "setting_icon_size", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "border-width", "setting_border_width", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "border-color", "setting_border_color", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "background_transparency", "setting_background_transparency", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "icon_size", "setting_icon_size", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "icon_directory", "setting_icon_directory", this.on_display_changed);
+
+        this.settings.bindProperty(Settings.BindingDirection.IN, "theme", "setting_theme", this.on_theme_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font", "theme_font", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font_color", "theme_font_color", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "background_color", "theme_background_color", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "border_width", "theme_border_width", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "border_color", "theme_border_color", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "theme_sensor_normal", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_changed", "theme_sensor_changed", this.on_themeable_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_display_changed);
@@ -63,8 +68,6 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "suppress_header", "suppress_header", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_type_per_row", "sensor_type_per_row", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "color_sensor_normal", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_changed", "color_sensor_changed", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensor_changed_duration", "sensor_changed_duration", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_fans", "threshold_changed_fans", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_temps", "threshold_changed_temps", this.on_display_changed);
@@ -188,17 +191,17 @@ SensorsDesklet.prototype = {
 
     set_display: function() {
         try {
-            let font_properties = this.get_css_font(this.setting_font);
+            let font_properties = this.get_css_font(this.get_themeable("theme_font"));
             if (this.main_box) {
                 this.main_box.style = 
                     (font_properties.names.length === 0 ? "" : ("font-family: " + font_properties.names.join(", ") + ";\n")) + 
                     (font_properties.size === "" ? "" : ("font-size: " + font_properties.size + "px;\n")) +
                     (font_properties.style === "" ? "" : ("font-style: " + font_properties.style + ";\n")) +
                     (font_properties.weight === "" ? "" : ("font-weight: " + font_properties.weight + ";\n")) +
-                    "color: " + this.setting_font_color + ";\n" +
-                    "background-color: " + this.get_css_color(this.setting_background_color, this.setting_background_transparency) + ";\n" +
-                    "border-width: " + this.setting_border_width + "px;\n" +
-                    "border-color: " + this.get_css_color(this.setting_border_color, this.setting_background_transparency) + ";\n" +
+                    "color: " + this.get_themeable("theme_font_color") + ";\n" +
+                    "background-color: " + this.get_css_color(this.get_themeable("theme_background_color"), this.setting_background_transparency) + ";\n" +
+                    "border-width: " + this.get_themeable("theme_border_width") + "px;\n" +
+                    "border-color: " + this.get_css_color(this.get_themeable("theme_border_color"), this.setting_background_transparency) + ";\n" +
                     "border-radius: 10pt;\n" +
                     "padding: 5px 10px;";
 
@@ -214,24 +217,82 @@ SensorsDesklet.prototype = {
         }
     },
 
-    on_set_light_mode: function() {
-        this.setting_font_color = "rgb(0,0,0)";
-        this.setting_background_color = "rgb(222,221,218)";
-        this.setting_icon_theme = "light";
-        this.setting_border_color = "rgb(222,221,218)";
-        this.color_sensor_normal = "rgb(119,118,123)";
-        this.color_sensor_changed = "rgb(0,0,0)";
-        this.render();
+    on_customize_callback: function() {
+        this.log_error("on_customize_callback");
+        this.log_debug_object(this.theme_details);
+        if (!this.theme_details) return;
+
+        try {
+            this.setting_theme = "_custom";
+            this.log_debug_object(this.theme_details);
+            for (const key of Object.keys(this.theme_details)) {
+                this[key] = this.theme_details[key];
+            }
+            this.on_display_changed();
+        } catch (error) {
+            this.log_error(error);
+        }
     },
 
-    on_set_dark_mode: function() {
-        this.setting_font_color = "rgb(222,221,218)";
-        this.setting_background_color = "rgb(0,0,0)";
-        this.setting_icon_theme = "dark";
-        this.setting_border_color = "rgb(0,0,0)";
-        this.color_sensor_normal = "rgb(119,118,123)";
-        this.color_sensor_changed = "rgb(222,221,218)";
-        this.render();
+    get_themeable: function(key) {
+        if (this.setting_theme != "_custom") {
+            if (this.theme_details && this.theme_details[key] ) {
+                return this.theme_details[key];
+            }
+        }
+
+        return this[key];
+    },
+
+    on_themeable_changed: function() {
+        this.on_display_changed();
+    },
+
+    on_theme_changed: function() {
+        this.theme_details = {};
+        if (this.setting_theme != "_custom") {
+            this.set_theme(this.setting_theme);
+        }
+        this.on_display_changed();
+    },
+
+    set_theme: function(theme_name) {
+        try {
+            let theme = this.load_theme(theme_name);
+            this.theme_details = {};
+            for (const key of Object.keys(theme)) {
+                if (!key.startsWith("theme_")) continue;
+                this.theme_details[key] = theme[key];
+            }
+        } catch (error) {
+            this.log_error("Load theme (" + theme_name + ") error:" + error);
+        }
+    },
+
+    load_theme: function(theme_name) {
+        return JSON.parse(
+            this.get_file_contents(
+                GLib.build_filenamev([
+                    this.metadata.path, 
+                    "themes", 
+                    theme_name + ".json"
+                ])
+            )
+        );
+    },
+
+    get_file_contents: function(path) {
+        let result;
+
+        const file = Gio.file_new_for_path(path);
+        let [success, contents, tag] = file.load_contents(null);
+        if (success) {
+            let data = ByteArray.toString(contents);
+            result = data.trim();
+        }
+        GLib.free(contents);
+
+        return result;
     },
 
     toggle_decorations() {
@@ -878,7 +939,7 @@ DataView.prototype = {
             description = "-";
         }
 
-        return this.render_sensor(chip_name, "temps", sensor_name, details.input, description, "temperature-medium");
+        return this.render_sensor(chip_name, "temps", sensor_name, details.input, description, "temperature_medium");
     },
 
     render_voltage: function(chip_name, sensor_name, details) {
@@ -954,24 +1015,19 @@ DataView.prototype = {
     },
 
     get_sensor_icon: function(is_active, icon_name) {
-        let parts = [this.parent.metadata.path, "img"];
-        switch (this.parent.setting_icon_theme) {
-            case "dark":
-            case "light":
-                if (is_active) parts.push(this.parent.setting_icon_theme);
-                else  parts.push("medium");
-                break;
-            default:
-                parts.push(this.parent.setting_icon_theme);
-                break;
-        }
-        parts.push(icon_name + ".svg");
+        let path_segments = [ this.parent.metadata.path, "themes" ];
 
-        let path = GLib.build_filenamev(parts);
-        let icon = Gio.file_new_for_path(path);
-        let gicon = new Gio.FileIcon({ file: icon });
+        if (this.parent.setting_theme == "_custom") path_segments.push(this.parent.setting_icon_directory);
+        else path_segments.push(this.parent.setting_theme);
+
+        if (is_active) path_segments.push("active_" + icon_name + ".svg");
+        else  path_segments.push("active_" + icon_name + ".svg");
+        let path = GLib.build_filenamev(path_segments);
+
         return new St.Icon({
-            gicon: gicon,
+            gicon: new Gio.FileIcon({
+                    file: Gio.file_new_for_path(path)
+            }),
             icon_size: this.parent.setting_icon_size,
             icon_type: St.IconType.SYMBOLIC,
             style_class: "sensor_icon"
@@ -979,8 +1035,8 @@ DataView.prototype = {
     },
 
     get_sensor_style: function(is_active) {
-        if (is_active) return "color: " + this.parent.color_sensor_changed;
-        else return "color: " + this.parent.color_sensor_normal;
+        if (is_active) return "color: " + this.parent.get_themeable("theme_sensor_changed");
+        else return "color: " + this.parent.get_themeable("theme_sensor_normal");
     },
 
     render_header: function(title, container) {

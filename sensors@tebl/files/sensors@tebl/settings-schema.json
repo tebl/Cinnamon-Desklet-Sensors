@@ -36,7 +36,7 @@
         "section-themes": {
             "type": "section",
             "title": "Themes",
-            "keys": [ "dark_mode", "light_mode" ]
+            "keys": [ "theme", "customize_theme", "icon_directory", "icon_size" ]
         },
         "section-debugging": {
             "type": "section",
@@ -47,22 +47,24 @@
         "section-appearance": {
             "type": "section",
             "title": "Appearance",
-            "keys": [ "set_width", "width", "set_height", "height", "hide-decorations", "reserve_status", "icon-theme", "icon-size" ]
+            "keys": [ "set_width", "width", "set_height", "height", "hide_decorations", "reserve_status" ]
         },
         "section-font": {
             "type": "section",
             "title": "Font",
-            "keys": [ "font", "font-color" ]
+            "keys": [ "font", "font_color" ],
+            "dependency": "theme=_custom"
         },
         "section-background": {
             "type": "section",
             "title": "Background",
-            "keys": [ "background-color", "background-transparency" ]
+            "keys": [ "background_color", "background_transparency" ]
         },
         "section-border": {
             "type": "section",
             "title": "Border",
-            "keys": [ "border-color", "border-width" ]
+            "keys": [ "border_color", "border_width" ],
+            "dependency": "theme=_custom"
         },
 
         "section-filter-rules": {
@@ -90,17 +92,41 @@
         }
     },
 
-    "dark_mode": {
-        "type": "button",
-        "description": "Set 'Dark Mode'",
-        "callback": "on_set_dark_mode",
-        "dependency": "icon-theme!=dark"
+    "theme": {
+        "type": "combobox",
+        "description": "Theme",
+        "default": "dark",
+        "options": {
+            "Custom": "_custom",
+            "Dark Theme": "dark",
+            "Light Theme": "light"
+        },
+        "tooltip": "Set indicated theme, use custom if you want to control the appearance directly"
     },
-    "light_mode": {
+    "customize_theme": {
         "type": "button",
-        "description": "Set 'Light Mode'",
-        "callback": "on_set_light_mode",
-        "dependency": "icon-theme!=light"
+        "description": "Customize theme",
+        "callback": "on_customize_callback",
+        "dependency": "theme!=_custom"
+    },
+    "icon_directory": {
+        "type": "combobox",
+        "description": "Theme",
+        "default": "dark",
+        "options": {
+            "Dark Theme": "dark",
+            "Light Theme": "light"
+        },
+        "dependency": "theme=_custom"
+    },
+    "icon_size": {
+        "type": "scale",
+        "default": 32,
+        "min": 16,
+        "max": 64,
+        "step": 1,
+        "show-value": true,
+        "description": "Icon size in pixels"
     },
 
     "delay": {
@@ -178,7 +204,7 @@
         "tooltip": "Height in pixels",
         "dependency": "set_height"
     },
-    "hide-decorations": {
+    "hide_decorations": {
         "type": "checkbox",
         "description": "Hide decorations",
         "default": true
@@ -219,12 +245,14 @@
     "color_sensor_normal" : {
 	    "type": "colorchooser",
 	    "default" : "rgb(119,118,123)",
-	    "description" : "Sensor colour (normal)"
+	    "description" : "Sensor colour (normal)",
+        "dependency": "theme=_custom"
     },
     "color_sensor_changed" : {
 	    "type": "colorchooser",
 	    "default" : "rgb(222,221,218)",
-	    "description" : "Sensor colour (changes)"
+	    "description" : "Sensor colour (changes)",
+        "dependency": "theme=_custom"
     },
     "sensor_changed_duration": {
         "type": "spinbutton",
@@ -316,23 +344,26 @@
     "font": {
         "type": "fontchooser",
         "default": "Monospace 15",
-        "description": "Font"
+        "description": "Font",
+        "dependency": "theme=_custom"
     },
-    "font-color" : {
+    "font_color" : {
 	    "type": "colorchooser",
 	    "default" : "rgb(222,221,218)",
 	    "description" : "Font color",
-	    "tooltip" : "Font color"
+	    "tooltip" : "Font color",
+        "dependency": "theme=_custom"
     },
 
-    "background-color": {
+    "background_color": {
         "type": "colorchooser",
         "indent": true,
         "default": "rgb(0,0,0)",
         "description": "Background color",
-        "tooltip": "Click to select the background color"
+        "tooltip": "Click to select the background color",
+        "dependency": "theme=_custom"
     },
-    "background-transparency": {
+    "background_transparency": {
         "type": "scale",
         "indent": true,
         "default": 0.3,
@@ -342,39 +373,23 @@
         "description": "Transparency",
         "tooltip": "Transparency of the desklet"
     },
-    "icon-theme": {
-        "type": "combobox",
-        "description": "Icon theme",
-        "default": "dark",
-        "options": {
-            "Dark Mode": "dark",
-            "Light Mode": "light"
-        },
-        "tooltip": "Sets the theme used on icons, but note specifically that this option only changes the icons. To set everything accordingly, use theme buttons under 'General'."
-    },
-    "icon-size": {
-        "type": "scale",
-        "default": 32,
-        "min": 16,
-        "max": 64,
-        "step": 1,
-        "show-value": true,
-        "description": "Icon size in pixels"
-    },
-    "border-color": {
+
+    "border_color": {
         "type": "colorchooser",
         "indent": true,
         "default": "rgb(0,0,0)",
         "description": "Border color",
-        "tooltip": "Click to select the border color"
+        "tooltip": "Click to select the border color",
+        "dependency": "theme=_custom"
     },
-    "border-width": {
+    "border_width": {
         "type": "spinbutton",
         "default": 2,
         "min": 0,
         "max": 200,
         "units": "px",
         "description" : "Border width",
-        "step": 1
+        "step": 1,
+        "dependency": "theme=_custom"
     }
 }
