@@ -36,7 +36,7 @@
         "section-themes": {
             "type": "section",
             "title": "Themes",
-            "keys": [ "theme", "customize_theme", "icon_directory", "icon_size" ]
+            "keys": [ "theme", "icon_directory", "icon_size" ]
         },
         "section-debugging": {
             "type": "section",
@@ -102,12 +102,6 @@
             "Light Theme": "light"
         },
         "tooltip": "Set indicated theme, use custom if you want to control the appearance directly"
-    },
-    "customize_theme": {
-        "type": "button",
-        "description": "Customize theme",
-        "callback": "on_customize_callback",
-        "dependency": "theme!=_custom"
     },
     "icon_directory": {
         "type": "combobox",

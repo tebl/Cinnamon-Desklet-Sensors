@@ -217,23 +217,6 @@ SensorsDesklet.prototype = {
         }
     },
 
-    on_customize_callback: function() {
-        this.log_error("on_customize_callback");
-        this.log_debug_object(this.theme_details);
-        if (!this.theme_details) return;
-
-        try {
-            this.setting_theme = "_custom";
-            this.log_debug_object(this.theme_details);
-            for (const key of Object.keys(this.theme_details)) {
-                this[key] = this.theme_details[key];
-            }
-            this.on_display_changed();
-        } catch (error) {
-            this.log_error(error);
-        }
-    },
-
     get_themeable: function(key) {
         if (this.setting_theme != "_custom") {
             if (this.theme_details && this.theme_details[key] ) {
@@ -245,7 +228,9 @@ SensorsDesklet.prototype = {
     },
 
     on_themeable_changed: function() {
-        this.on_display_changed();
+        if (this.setting_theme != "_custom") {
+            this.on_display_changed();
+        }
     },
 
     on_theme_changed: function() {
