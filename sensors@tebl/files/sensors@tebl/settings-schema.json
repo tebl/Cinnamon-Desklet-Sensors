@@ -36,12 +36,12 @@
         "section-themes": {
             "type": "section",
             "title": "Themes",
-            "keys": [ "theme", "icon_directory", "icon_size" ]
+            "keys": [ "theme", "icons", "icon_size" ]
         },
         "section-debugging": {
             "type": "section",
             "title": "Debugging",
-            "keys": [ "enable_debug" ]  
+            "keys": [ "enable_debug", "theme_out" ]  
         },
 
         "section-appearance": {
@@ -63,7 +63,7 @@
         "section-border": {
             "type": "section",
             "title": "Border",
-            "keys": [ "border_color", "border_width" ],
+            "keys": [ "border_color", "border_width", "border_radius" ],
             "dependency": "theme=_custom"
         },
 
@@ -98,16 +98,18 @@
         "default": "dark",
         "options": {
             "Custom": "_custom",
+            "Amiga": "amiga",
             "Dark Theme": "dark",
             "Light Theme": "light"
         },
         "tooltip": "Set indicated theme, use custom if you want to control the appearance directly"
     },
-    "icon_directory": {
+    "icons": {
         "type": "combobox",
-        "description": "Theme",
+        "description": "Icons",
         "default": "dark",
         "options": {
+            "Amiga Theme": "amiga",
             "Dark Theme": "dark",
             "Light Theme": "light"
         },
@@ -153,12 +155,20 @@
         "dependency": "show_updated",
         "tooltip": "Show the timestamp for the last data collection operation instead of last rendering time"
     },
+    
     "enable_debug": {
         "type": "checkbox",
         "description": "Enable debugging",
         "default": false,
         "tooltip": "Enable Desklet debugging information (available from 'cinnamon-looking-glass')"
     },
+    "theme_out": {
+        "type": "button",
+        "description": "Print custom theme",
+        "callback": "on_theme_out",
+        "dependency": "enable_debug"
+    },
+
     "reserve_status": {
         "type": "checkbox",
         "description": "Reserve status",
@@ -384,6 +394,17 @@
         "units": "px",
         "description" : "Border width",
         "step": 1,
+        "dependency": "theme=_custom"
+    },
+    "border_radius": {
+        "type": "scale",
+        "indent": true,
+        "default": 25,
+        "min": 0,
+        "max": 50.0,
+        "step": 1,
+        "description": "Border radius in pixels",
+        "tooltip": "Radius for rounding Desklet corners",
         "dependency": "theme=_custom"
     }
 }

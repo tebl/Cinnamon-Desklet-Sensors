@@ -51,12 +51,13 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "height", "setting_height", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background_transparency", "setting_background_transparency", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "icon_size", "setting_icon_size", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "icon_directory", "setting_icon_directory", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "theme", "setting_theme", this.on_theme_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "icons", "theme_icons", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "font", "theme_font", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "font_color", "theme_font_color", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background_color", "theme_background_color", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "border_radius", "theme_border_radius", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_width", "theme_border_width", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_color", "theme_border_color", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "theme_sensor_normal", this.on_themeable_changed);
@@ -202,7 +203,8 @@ SensorsDesklet.prototype = {
                     "background-color: " + this.get_css_color(this.get_themeable("theme_background_color"), this.setting_background_transparency) + ";\n" +
                     "border-width: " + this.get_themeable("theme_border_width") + "px;\n" +
                     "border-color: " + this.get_css_color(this.get_themeable("theme_border_color"), this.setting_background_transparency) + ";\n" +
-                    "border-radius: 10pt;\n" +
+                    "border-radius: " + this.get_themeable("theme_border_radius") + "px;\n" +
+                    'box-shadow:0 0 15px 10px rgba(0,0,0,' + this.setting_background_transparency +');' + "\n" +
                     "padding: 5px 10px;";
 
                 let x = -1;
@@ -219,7 +221,7 @@ SensorsDesklet.prototype = {
 
     get_themeable: function(key) {
         if (this.setting_theme != "_custom") {
-            if (this.theme_details && this.theme_details[key] ) {
+            if (this.theme_details && this.theme_details[key] != undefined ) {
                 return this.theme_details[key];
             }
         }
@@ -227,10 +229,24 @@ SensorsDesklet.prototype = {
         return this[key];
     },
 
+    on_theme_out: function() {
+        let current = {
+            "theme_icons": this.theme_icons,
+            "theme_font": this.theme_font,
+            "theme_font_color": this.theme_font_color,
+            "theme_background_color": this.theme_background_color,
+            "theme_border_radius": this.theme_border_radius,
+            "theme_border_width": this.theme_border_width,
+            "theme_border_color": this.theme_border_color,
+            "theme_sensor_normal": this.theme_sensor_normal,
+            "theme_sensor_changed": this.theme_sensor_changed
+        };
+        this.log_debug_object(current);
+    },
+
     on_themeable_changed: function() {
-        if (this.setting_theme != "_custom") {
-            this.on_display_changed();
-        }
+        if (this.setting_theme == "_custom") return;
+        this.on_display_changed();
     },
 
     on_theme_changed: function() {
@@ -249,6 +265,8 @@ SensorsDesklet.prototype = {
                 if (!key.startsWith("theme_")) continue;
                 this.theme_details[key] = theme[key];
             }
+
+            if (!this.theme_details["theme_icons"]) this.theme_details["theme_icons"] = theme_name;
         } catch (error) {
             this.log_error("Load theme (" + theme_name + ") error:" + error);
         }
@@ -1001,12 +1019,10 @@ DataView.prototype = {
 
     get_sensor_icon: function(is_active, icon_name) {
         let path_segments = [ this.parent.metadata.path, "themes" ];
-
-        if (this.parent.setting_theme == "_custom") path_segments.push(this.parent.setting_icon_directory);
-        else path_segments.push(this.parent.setting_theme);
+        path_segments.push(this.parent.get_themeable("theme_icons"));
 
         if (is_active) path_segments.push("active_" + icon_name + ".svg");
-        else  path_segments.push("active_" + icon_name + ".svg");
+        else  path_segments.push("inactive_" + icon_name + ".svg");
         let path = GLib.build_filenamev(path_segments);
 
         return new St.Icon({

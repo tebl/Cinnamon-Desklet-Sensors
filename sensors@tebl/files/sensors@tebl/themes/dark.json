@@ -1,6 +1,9 @@
 {
+    "theme_font": "Monospace 15",
     "theme_font_color": "rgb(222,221,218)",
     "theme_background_color": "rgb(0,0,0)",
+    "theme_border_width": 2,
+    "theme_border_radius": 25,
     "theme_border_color": "rgb(0,0,0)",
     "theme_sensor_normal": "rgb(119,118,123)",
     "theme_sensor_changed": "rgb(222,221,218)"
