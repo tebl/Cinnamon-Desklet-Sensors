@@ -24,10 +24,6 @@ SensorsDesklet.prototype = {
         this.log_debug("Initializing");
         this.setHeader(metadata.name);
 
-        this.video_blacklisted = [];
-        this.video_expected = [];
-        this.extra_modules = [];
-
         this.facts = new FactStore();
         this.facts_reset();
 
@@ -38,6 +34,7 @@ SensorsDesklet.prototype = {
 
     load_settings: function() {
         this.settings = new Settings.DeskletSettings(this, this.metadata.uuid, this.desklet_id);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "enable_debug", "enable_debug", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "delay", "setting_delay", this.on_settings_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "configuration_delay", "configuration_delay", this.on_settings_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "show_updated", "setting_show_updated", this.on_display_changed);
@@ -81,7 +78,6 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_volts", "include_volts", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_volts", "include_zero_volts", this.on_display_changed);
 
-        this.settings.bindProperty(Settings.BindingDirection.IN, "enable_debug", "enable_debug", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "read_sensors_expiration", "read_sensors_expiration", this.on_settings_changed);
 
         this.load_filter_settings();
@@ -317,7 +313,7 @@ SensorsDesklet.prototype = {
                 this.read_sensors();
             } catch (e) {
                 this.log_error("Uncaught error in on_data_changed: " + e); 
-                this.set_error("Uncaught error");
+                this.set_error("Uncaught error", { set_failing: "sensors.devices" });
             }
         }
 
@@ -365,12 +361,11 @@ SensorsDesklet.prototype = {
                     }
                 );
             } else {
-                this.facts.set_error("sensors.devices", true, this.read_sensors_expiration);
+                this.set_error("Failed read_sensors", { set_failing: "sensors.devices" }, this.read_sensors_expiration);
             }
         } catch (error) {
             this.log_error("Failed read_sensors: " + error);
-            this.set_error("Error processing sensors", this.read_sensors_expiration);
-            this.facts.set_error("sensors.devices", true, this.read_sensors_expiration);
+            this.set_error("Error processing sensors", { set_failing: "sensors.devices" }, this.read_sensors_expiration);
         }
     },
 
@@ -459,7 +454,7 @@ SensorsDesklet.prototype = {
         });
         this.set_display();
 
-        const list = new DataView(this.id, this);
+        const list = new DataView(this.desklet_id, this);
         this.main_box.add(list.render());
 
         this.add_status_label(this.main_box);
@@ -530,7 +525,6 @@ SensorsDesklet.prototype = {
         global.logError(this.metadata.uuid + " [" + this.desklet_id + "] " + msg);
     },
 
-    status_default_expiration: 10,
     get_status: function() {
         let fact = this.facts.get("status", true);
 
@@ -544,8 +538,15 @@ SensorsDesklet.prototype = {
         return fact;
     },
 
+    status_default_expiration: 10,
     status_level_error: 0,
     set_error: function(message, options = {}, expiration = this.status_default_expiration) {
+        if (options["set_failing"]) {
+            this.facts.set_error(options["set_failing"], true, expiration);
+            options["clear_on"] = options["set_failing"];
+            delete options["set_failing"];
+        }
+
         this._set_status(message, 0, expiration, options);
     },
 
@@ -933,11 +934,11 @@ DataView.prototype = {
         return this.render_sensor(chip_name, "fans", sensor_name, details.input, description, "fan");
     },
 
-    icons: { update: "\u27F3", degrees_c: "\u2103" },
+    unicode_symbols: { update: "\u27F3", degrees_c: "\u2103" },
     render_temperature: function(chip_name, sensor_name, details) {
         let description = details.input;
         if (description != 0) {
-            description = details.input.toFixed(1) + this.icons.degrees_c;
+            description = details.input.toFixed(1) + this.unicode_symbols.degrees_c;
         } else {
             description = "-";
         }

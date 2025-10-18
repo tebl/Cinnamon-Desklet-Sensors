@@ -2,6 +2,7 @@
     "layout1": {
         "type": "layout",
         "pages": [ "general", "appearance", "filter", "sensors", "tuning" ],
+        
         "general": {
             "type": "page",
             "title": "General",
