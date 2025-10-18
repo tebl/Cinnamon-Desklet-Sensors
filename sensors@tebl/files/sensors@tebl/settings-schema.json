@@ -2,7 +2,7 @@
     "layout1": {
         "type": "layout",
         "pages": [ "general", "appearance", "filter", "sensors", "tuning" ],
-        
+
         "general": {
             "type": "page",
             "title": "General",
@@ -37,7 +37,7 @@
         "section-themes": {
             "type": "section",
             "title": "Themes",
-            "keys": [ "theme", "icons", "icon_size" ]
+            "keys": [ "theme", "transparency", "icons", "icon_size" ]
         },
         "section-debugging": {
             "type": "section",
@@ -59,7 +59,7 @@
         "section-background": {
             "type": "section",
             "title": "Background",
-            "keys": [ "background_color", "background_transparency" ]
+            "keys": [ "background_color" ]
         },
         "section-border": {
             "type": "section",
@@ -126,6 +126,16 @@
         "step": 1,
         "show-value": true,
         "description": "Icon size in pixels"
+    },
+    "transparency": {
+        "type": "scale",
+        "indent": true,
+        "default": 0.3,
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05,
+        "description": "Transparency",
+        "tooltip": "Transparency of the desklet"
     },
 
     "delay": {
@@ -369,16 +379,6 @@
         "description": "Background color",
         "tooltip": "Click to select the background color",
         "dependency": "theme=_custom"
-    },
-    "background_transparency": {
-        "type": "scale",
-        "indent": true,
-        "default": 0.3,
-        "min": 0.0,
-        "max": 1.0,
-        "step": 0.05,
-        "description": "Transparency",
-        "tooltip": "Transparency of the desklet"
     },
 
     "border_color": {

@@ -46,7 +46,7 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "width", "setting_width", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "set_height", "setting_set_height", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "height", "setting_height", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "background_transparency", "setting_background_transparency", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "transparency", "setting_transparency", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "icon_size", "setting_icon_size", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "theme", "setting_theme", this.on_theme_changed);
@@ -196,11 +196,11 @@ SensorsDesklet.prototype = {
                     (font_properties.style === "" ? "" : ("font-style: " + font_properties.style + ";\n")) +
                     (font_properties.weight === "" ? "" : ("font-weight: " + font_properties.weight + ";\n")) +
                     "color: " + this.get_themeable("theme_font_color") + ";\n" +
-                    "background-color: " + this.get_css_color(this.get_themeable("theme_background_color"), this.setting_background_transparency) + ";\n" +
+                    "background-color: " + this.get_css_color(this.get_themeable("theme_background_color"), this.setting_transparency) + ";\n" +
                     "border-width: " + this.get_themeable("theme_border_width") + "px;\n" +
-                    "border-color: " + this.get_css_color(this.get_themeable("theme_border_color"), this.setting_background_transparency) + ";\n" +
+                    "border-color: " + this.get_css_color(this.get_themeable("theme_border_color"), this.setting_transparency) + ";\n" +
                     "border-radius: " + this.get_themeable("theme_border_radius") + "px;\n" +
-                    'box-shadow:0 0 15px 10px rgba(0,0,0,' + this.setting_background_transparency +');' + "\n" +
+                    'box-shadow:0 0 15px 10px rgba(0,0,0,' + this.setting_transparency +');' + "\n" +
                     "padding: 5px 10px;";
 
                 let x = -1;
