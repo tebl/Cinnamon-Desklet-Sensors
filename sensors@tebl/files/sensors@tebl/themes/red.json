@@ -1,0 +1,10 @@
+{
+    "theme_font": "Ubuntu 16",
+    "theme_font_color": "rgb(232,33,39)",
+    "theme_background_color": "rgb(0,0,0)",
+    "theme_border_radius": 25,
+    "theme_border_width": 1,
+    "theme_border_color": "rgb(61,56,70)",
+    "theme_sensor_normal": "rgb(255,255,255)",
+    "theme_sensor_changed": "rgb(232,33,39)"
+}

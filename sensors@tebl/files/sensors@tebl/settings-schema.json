@@ -100,7 +100,8 @@
             "Custom": "_custom",
             "Amiga": "amiga",
             "Dark Theme": "dark",
-            "Light Theme": "light"
+            "Light Theme": "light",
+            "Dark Red Theme": "red"
         },
         "tooltip": "Set indicated theme, use custom if you want to control the appearance directly"
     },
