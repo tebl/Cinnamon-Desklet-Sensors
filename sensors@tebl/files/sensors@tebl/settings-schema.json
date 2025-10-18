@@ -111,7 +111,8 @@
         "options": {
             "Amiga Theme": "amiga",
             "Dark Theme": "dark",
-            "Light Theme": "light"
+            "Light Theme": "light",
+            "Dark Red": "red"
         },
         "dependency": "theme=_custom"
     },
