@@ -2,7 +2,7 @@
     "theme_font": "URW Gothic 14",
     "theme_font_color": "rgb(254,136,1)",
     "theme_font_color_header": "rgb(254,136,1)",
-    "theme_font_color_key": "rgb(254,136,1)",
+    "theme_font_color_key": "rgb(255,255,255)",
     "theme_font_color_normal": "rgb(255,255,255)",
     "theme_font_color_active": "rgb(254,136,1)",
     "theme_background_color": "rgb(0,85,170)",

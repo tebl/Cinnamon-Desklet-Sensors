@@ -359,19 +359,21 @@
 	    "type": "colorchooser",
 	    "default" : "rgb(222,221,218)",
 	    "description" : "Font color (key)",
-	    "tooltip" : "Specifies the color of text keys",
+	    "tooltip" : "Specifies the color of text keys - for active sensors, see 'Font colour (active)' below",
         "dependency": "theme=_custom"
     },
     "font_color_normal" : {
 	    "type": "colorchooser",
 	    "default" : "rgb(119,118,123)",
-	    "description" : "Sensor colour (normal)",
+	    "description" : "Font colour (normal)",
+        "tooltip": "Specifies the color of text values - for active sensors, see 'Font colour (active)' below",
         "dependency": "theme=_custom"
     },
     "font_color_active" : {
 	    "type": "colorchooser",
 	    "default" : "rgb(222,221,218)",
-	    "description" : "Sensor colour (changes)",
+	    "description" : "Font colour (active)",
+        "tooltip": "Specifies the color of text values, used when sensors are considered active",
         "dependency": "theme=_custom"
     },
 

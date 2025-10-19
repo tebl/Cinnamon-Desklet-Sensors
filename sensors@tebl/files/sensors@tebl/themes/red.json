@@ -2,7 +2,7 @@
     "theme_font": "Ubuntu 16",
     "theme_font_color": "rgb(232,33,39)",
     "theme_font_color_header": "rgb(232,33,39)",
-    "theme_font_color_key": "rgb(232,33,39)",
+    "theme_font_color_key": "rgb(255,255,255)",
     "theme_font_color_normal": "rgb(255,255,255)",
     "theme_font_color_active": "rgb(232,33,39)",
     "theme_background_color": "rgb(0,0,0)",

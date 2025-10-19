@@ -1040,7 +1040,8 @@ DataView.prototype = {
     },
 
     get_key_style: function(is_active) {
-        return this.get_value_style(is_active);
+        if (is_active) return this.get_text_style("theme_font_color_active");
+        return this.get_text_style("theme_font_color_key");
     },
 
     get_value_style: function(is_active) {

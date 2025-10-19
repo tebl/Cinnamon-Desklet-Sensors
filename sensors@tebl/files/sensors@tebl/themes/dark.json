@@ -2,7 +2,7 @@
     "theme_font": "Monospace 15",
     "theme_font_color": "rgb(222,221,218)",
     "theme_font_color_header": "rgb(222,221,218)",
-    "theme_font_color_key": "rgb(222,221,218)",
+    "theme_font_color_key": "rgb(119,118,123)",
     "theme_font_color_normal": "rgb(119,118,123)",
     "theme_font_color_active": "rgb(222,221,218)",
     "theme_background_color": "rgb(0,0,0)",
