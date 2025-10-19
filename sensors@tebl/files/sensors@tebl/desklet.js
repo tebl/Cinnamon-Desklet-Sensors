@@ -53,12 +53,14 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "icons", "theme_icons", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "font", "theme_font", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "font_color", "theme_font_color", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font_color_header", "theme_font_color_header", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font_color_key", "theme_font_color_key", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font_color_normal", "theme_font_color_normal", this.on_themeable_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "font_color_active", "theme_font_color_active", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "background_color", "theme_background_color", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_radius", "theme_border_radius", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_width", "theme_border_width", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_color", "theme_border_color", this.on_themeable_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_normal", "theme_sensor_normal", this.on_themeable_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "color_sensor_changed", "theme_sensor_changed", this.on_themeable_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_display_changed);
@@ -225,17 +227,19 @@ SensorsDesklet.prototype = {
         return this[key];
     },
 
-    on_theme_out: function() {
+    on_theme_print: function() {
         let current = {
             "theme_icons": this.theme_icons,
             "theme_font": this.theme_font,
             "theme_font_color": this.theme_font_color,
+            "theme_font_color_header": this.theme_font_color_header,
+            "theme_font_color_key": this.theme_font_color_key,
+            "theme_font_color_normal": this.theme_font_color_normal,
+            "theme_font_color_active": this.theme_font_color_active,
             "theme_background_color": this.theme_background_color,
             "theme_border_radius": this.theme_border_radius,
             "theme_border_width": this.theme_border_width,
-            "theme_border_color": this.theme_border_color,
-            "theme_sensor_normal": this.theme_sensor_normal,
-            "theme_sensor_changed": this.theme_sensor_changed
+            "theme_border_color": this.theme_border_color
         };
         this.log_debug_object(current);
     },
@@ -962,10 +966,9 @@ DataView.prototype = {
         let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
         box.add_actor( this.get_sensor_icon(is_active, icon_name) );
 
-        let style = this.get_sensor_style(is_active);
         let text_box = new St.BoxLayout({ vertical: true });
-        text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name", style: style }), { expand: true });
-        text_box.add(new St.Label({ text: description, style_class: "sensor_value", style: style }), { expand: true });
+        text_box.add(new St.Label({ text: sensor_name + ": ", style_class: "sensor_name", style: this.get_key_style(is_active) }), { expand: true });
+        text_box.add(new St.Label({ text: description, style_class: "sensor_value", style: this.get_value_style(is_active) }), { expand: true });
         box.add(text_box);
 
         return box;
@@ -1036,19 +1039,29 @@ DataView.prototype = {
         });
     },
 
-    get_sensor_style: function(is_active) {
-        if (is_active) return "color: " + this.parent.get_themeable("theme_sensor_changed");
-        else return "color: " + this.parent.get_themeable("theme_sensor_normal");
+    get_key_style: function(is_active) {
+        return this.get_value_style(is_active);
+    },
+
+    get_value_style: function(is_active) {
+        if (is_active) return this.get_text_style("theme_font_color_active");
+        return this.get_text_style("theme_font_color_normal");
+    },
+
+    get_text_style: function(themeable) {
+        let result = this.parent.get_themeable(themeable);
+        if (result) return "color: " + result + ";\n";
+        return undefined;
     },
 
     render_header: function(title, container) {
         if (!this.parent.suppress_header) {
-            container.add(new St.Label({ text: title, style_class: "label-title" }), { expand: true });
+            container.add(new St.Label({ text: title, style_class: "label-title", style: this.get_text_style("theme_font_color_header") }), { expand: true });
         }
     },
 
     render_text: function(description, container) {
-        container.add(new St.Label({ text: description }), { expand: true });
+        container.add(new St.Label({ text: description, style: this.get_text_style("theme_font_color") }), { expand: true });
         return container;
     }
 }

@@ -11,7 +11,7 @@
         "appearance": {
             "type": "page",
             "title": "Appearance",
-            "sections": [ "section-appearance", "section-font", "section-background", "section-border" ]
+            "sections": [ "section-appearance", "section-custom" ]
         },
         "filter": {
             "type": "page",
@@ -50,21 +50,10 @@
             "title": "Appearance",
             "keys": [ "set_width", "width", "set_height", "height", "hide_decorations", "reserve_status" ]
         },
-        "section-font": {
+        "section-custom": {
             "type": "section",
-            "title": "Font",
-            "keys": [ "font", "font_color" ],
-            "dependency": "theme=_custom"
-        },
-        "section-background": {
-            "type": "section",
-            "title": "Background",
-            "keys": [ "background_color" ]
-        },
-        "section-border": {
-            "type": "section",
-            "title": "Border",
-            "keys": [ "border_color", "border_width", "border_radius" ],
+            "title": "Custom theme",
+            "keys": [ "font", "font_color", "font_color_header", "font_color_key", "font_color_normal", "font_color_active", "background_color", "border_color", "border_width", "border_radius" ],
             "dependency": "theme=_custom"
         },
 
@@ -83,7 +72,7 @@
         "section-sensors": {
             "type": "section",
             "title": "Sensor display",
-            "keys": [ "suppress_header", "sensors_per_row", "sensor_type_per_row", "color_sensor_normal", "color_sensor_changed", "sensor_changed_duration", "threshold_changed_fans", "threshold_changed_temps", "threshold_changed_volts" ]
+            "keys": [ "suppress_header", "sensors_per_row", "sensor_type_per_row", "sensor_changed_duration", "threshold_changed_fans", "threshold_changed_temps", "threshold_changed_volts" ]
         },
 
         "section-tuning": {
@@ -178,7 +167,7 @@
     "theme_out": {
         "type": "button",
         "description": "Print custom theme",
-        "callback": "on_theme_out",
+        "callback": "on_theme_print",
         "dependency": "enable_debug"
     },
 
@@ -258,18 +247,6 @@
         "type" : "checkbox",
         "default": true,
         "description": "Separate sensor types"
-    },
-    "color_sensor_normal" : {
-	    "type": "colorchooser",
-	    "default" : "rgb(119,118,123)",
-	    "description" : "Sensor colour (normal)",
-        "dependency": "theme=_custom"
-    },
-    "color_sensor_changed" : {
-	    "type": "colorchooser",
-	    "default" : "rgb(222,221,218)",
-	    "description" : "Sensor colour (changes)",
-        "dependency": "theme=_custom"
     },
     "sensor_changed_duration": {
         "type": "spinbutton",
@@ -369,6 +346,32 @@
 	    "default" : "rgb(222,221,218)",
 	    "description" : "Font color",
 	    "tooltip" : "Font color",
+        "dependency": "theme=_custom"
+    },
+    "font_color_header" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(222,221,218)",
+	    "description" : "Font color (header)",
+	    "tooltip" : "Specifies the color of text headers",
+        "dependency": "theme=_custom"
+    },
+    "font_color_key" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(222,221,218)",
+	    "description" : "Font color (key)",
+	    "tooltip" : "Specifies the color of text keys",
+        "dependency": "theme=_custom"
+    },
+    "font_color_normal" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(119,118,123)",
+	    "description" : "Sensor colour (normal)",
+        "dependency": "theme=_custom"
+    },
+    "font_color_active" : {
+	    "type": "colorchooser",
+	    "default" : "rgb(222,221,218)",
+	    "description" : "Sensor colour (changes)",
         "dependency": "theme=_custom"
     },
 
