@@ -496,14 +496,16 @@ SensorsDesklet.prototype = {
         }
 
         if (this.setting_show_updated) {
-            fact = this.facts.get("last_updated");
-            if (fact) {
-                if (!this.setting_show_actual_updated) fact = new Date();
+            fact = this.facts.get_any("last_updated");
+            if (fact && this.setting_show_actual_updated) {
                 label.text = "Updated " + fact.toLocaleTimeString();
-
                 parent.add(label);
                 return;
             }
+
+            label.text = "Updated " + new Date().toLocaleTimeString();
+            parent.add(label);
+            return;
         }
 
         if (this.setting_reserve_status) {
@@ -622,11 +624,22 @@ FactStore.prototype = {
         }
     },
 
+    /* Retrieves a named fact value, but aims to return values that's within
+     * a window of validity. The FactStore itself allows a certain grace period
+     * to avoid elements popping in and out, when such a period is not suitable
+     * we can set direct = true to avoid this behavior.
+     */
     get: function(key, direct = false) {
         if (this.is_valid(key, direct)) {
             return this.facts[key].value;
         }
         return undefined;
+    },
+
+    /* Get any data available, completely ignoring the question of validity. */
+    get_any: function(key) {
+        if (!this.facts) return undefined;
+        return this.facts[key].value;
     },
 
     unset: function(key) {
