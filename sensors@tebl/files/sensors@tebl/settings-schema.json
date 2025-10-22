@@ -250,9 +250,9 @@
     },
     "sensor_changed_duration": {
         "type": "spinbutton",
-        "default": 3,
+        "default": 20,
         "min": 1,
-        "max": 60,
+        "max": 120,
         "step": 1,
         "description": "Sensor change duration",
         "tooltip": "When a sensor has been considered changed this value determines how long we highlight it. Reduces noise."
