@@ -1,25 +1,71 @@
 # Sensors Desklet
+When building up a new stationary computer I needed a way to observe system temperatures, voltages and fan RPMs. While there are plenty of applications available that will provide that information in a far more detailed manner, I wanted something that would simply live on the desktop and only light when there are relevant changes. The information is provided by *lm-sensors*, a package that needs to be installed and functioning for the Desklet to display anything relevant.
 
-When building up a new stationary computer I needed a way to observe system temperatures, voltages and fan RPMs. While there are plenty of applications available that will provide that information in a far more detailed manner, I wanted something that would simply live on the desktop and only light when there are relevant changes. The information is provided by *lm_sensors*, a package that needs to be installed and functioning for the Desklet to display anything relevant.
+![Screenshot](sensors@tebl/screenshot.png)
 
-![Screenshot](/sensors@tebl/screenshot.png)
+## Requirements
+- *lm-sensors*-package, installed and configured.
 
-### Who is it for?
+## Installation
+Installed desklets in general be found within the path `~/.local/share/cinnamon/desklets/`, and installation involves moving a copy of this desklet to this folder. First things first, you need to install *lm-sensors*. With that working, you can install the desklet itself.
 
-* People who want to have sensors-information available at a glance without running a dedicated application.
+### 1. Install lm-sensors
+I'm not going to go into great detail on this point, there are resources online that'll go into far more detail than what I would be able to correctly regurgitate. The following however are a list of the steps taken, steps that worked for me that one time I did it:
 
-### Customization
+```
+apt install lm-sensors
+```
 
-You can use the themes provided, or create your own by selecting "Custom" instead of one of the provided themes. This allows you to customize colors, fonts etc.
+If all that works, you need to set it up using `sensors-detect`. While it will ask you stunning amount of questions, including some that hint at potential doom and gloom if you were to answer them incorrectly - I just blindly hit ENTER on them to go with safe choices. Again, this is not a recommendation; just a reflection on my own life choices.  
+```
+sudo sensors-detect
+```
 
-### Usage
+Ensure that you've got at least some results when running the `sensors`-command manually. If you don't get anything relevant, you may be using hardware that's simply too new for - have a look at [A warning about lm-sensors](#a-warning-about-lm-sensors) below for some more information. Go back to the previous step if you've found a module or two that might provide something more, you may also need to reboot.
+```
+sensors
+```
 
+### 2. Install desklet
+Installed desklets in general be found within the path `~/.local/share/cinnamon/desklets/`, and installation involves moving a copy of this desklet to this folder. To do so you have the option of cloning this repository along with potentially untested changes, then use the `install.py`-script to move everything where they inevitably need to go in order to function:
+
+```
+git clone git@github.com:tebl/Cinnamon-Desklet-Sensors.git
+cd Cinnamon-Desklet-Sensors
+./install.py -i
+```
+
+Alternatively, you can choose to download the latest [release](https://github.com/tebl/Cinnamon-Desklet-Sensors/releases). The entry you're looking for has a name in the form of 'sensors-vX.X.zip', but make sure to click it to download (right-click and *save link as...* will usually just give you the page and not the actual file). Then unzip that into `~/.local/share/cinnamon/desklets/`, a task that can be performed like this:
+```
+unzip sensors-vX.X.zip -d ~/.local/share/cinnamon/desklets/
+```
+
+With the files in the correct place, you can add the desklet to your desktop.
+
+
+### A warning about lm-sensors
+While *lm-sensors* is a package that is available and depended upon by most distributions, it's a project that has absolutely zero active developers. This haven't changed for 5 years by the time of writing this. So why is everyone using it?
+
+Because it works, and currently there's **no real alternative** (that I'm aware of).
+
+Why shouldn't everyone use it? Because it's not updated. As a result of that, it doesn't support any new hardware that've been sold since the last developer left the project. On the other hand there are still people writing code so that *lm-sensors* can work with that hardware.
+
+For my "AMD AM5 B650"-motherboard mentioned elsewhere, a quick search pointed to the fact that my specific MSI-branded motherboard uses the *Nuvoton 6687-R*, requiring the installation of and extra kernel module - [NCT6687D](https://github.com/Fred78290/nct6687d). This is how I solved this particular problem for my machine, beyond offering my experience with that machine I can't offer you any additional assistance on how to setup *lm-sensors* relating to your specific hardware.
+
+## Configuration
 The desklet should function by itself from the point that it is added, but without configuration it would more sensors than you'd actually want. For that reason, it is recommended that you start by right-clicking on hit to configure it. On the filter-tab you can set up rules to specifiy which sensors you're interested in, more on that below.
 
-#### Filter rules
+### Customization
+You can use the themes provided, or you can attempt to create your own by selecting "Custom". When doing this, you'll be able to customize colors, fonts etc in the search for something that's just a little bit better than what I've been able to throw together. If, like me, you do not enjoy having a desklet that will seemingly bounce around as it's content changes, you also have the option to force a specific desklet width and/or height. Note that the "Sensors"-tab also provide some options for configuring the layout used, mainly allowing you to select how many sensors to show per line.
+
+![Screenshot](sensors@tebl/settings-appearance.png)
+
+### Filtering sensors
 The desklet by default updates every second by default, this takes care of rendering the screen as well as evaluating which information gathering tasks are currently pending. This includes tasks such as actually running the sensors-command to gather sensor telemetry, but how often we do so is configurable in the tuning-section so that you can individually set how often such processes will be run.
 
-Within the filter-section, you can opt to filter out certain types of sensors - *lm_sensors* to the best of my knowledge, includes sensors for temperature, fan speed and voltage. You will however find that *lm_sensors* include sensors from many sources, not all of them relevant - and you'll want the ability to perform some filtering. A simplified scheme for this has been included, and here's what the default ruleset may look like:
+![Screenshot](sensors@tebl/settings-tuning.png)
+
+Within the filter-section, you can opt to filter out certain types of sensors - *lm-sensors* to the best of my knowledge, includes sensors for temperature, fan speed and voltage. You will however find that *lm-sensors* include sensors from many sources, not all of them relevant - and you'll want the ability to perform some filtering. A simplified scheme for this has been included, and here's what the default ruleset may look like:
 ```
 # Chip rules:
 !ignored_chip*
@@ -29,7 +75,9 @@ Within the filter-section, you can opt to filter out certain types of sensors - 
 !other_chip:faulty_sensor*
 *:*
 ```
-While initially a bit confusing, the format becomes a bit clearer once you realize that there's two sets of lists - the first one only applies to what *lm_sensors* consider a *chip* (for us old Windows-dwellers it's what we would have referred to as a driver), the second lists rules that apply to specific sensors. A rule matching such a *chip* can either be written out to match the complete name, or only the first part of it by the use of a single asterisk ('*'). When writing a rule to match a specific sensor we first need to match the chip it applies to, therefore the rule has two sections with a colon (':') between the two. Both sections of the rule follow the same format.
+While initially a bit confusing, the format becomes a bit clearer once you realize that there's two sets of lists - the first one only applies to what *lm-sensors* consider a *chip* (for us old Windows-dwellers it's what we would have referred to as a driver), the second lists rules that apply to specific sensors. A rule matching such a *chip* can either be written out to match the complete name, or only the first part of it by the use of a single asterisk ('*'). When writing a rule to match a specific sensor we first need to match the chip it applies to, therefore the rule has two sections with a colon (':') between the two. Both sections of the rule follow the same format.
+
+![Screenshot](sensors@tebl/settings-filter.png)
 
 Any rule can also negate certain entries by adding an exclamation point ('!') to the start of it, this allows you to remove specific *chips* you're not interested in. This also is relevant for sensors so that you can remove malfunctioning sensors. A common cause of such sensors is due to a hardware controller supporting the existance of such a sensor, but the actual physical sensor does not exist. Note that while a sensors can't be matched in any way if the chip isn't matched for inclusion. 
 
@@ -54,22 +102,14 @@ Included below is the ruleset I'm currently using with a common *AMD B650 AM5* m
 *:*
 ```
 
-#### Sensor changes
-While *lm_sensors* include terms such as *maximum*, *minimum*, *alarm* etc I don't really know how relevant these are for an average desktop user, so I'm ignoring them. Instead the desklet tries to watch sensors in order to determine which of them appear to be changing between changes in the sensor data, such sensors will be highlighted on the desklet. As there is naturally some inaccuracies in the values returned for a sensor, a sensor needs to have changed **more** than the configured threshold in order to be counted as changing.
+### Sensor changes
+While *lm-sensors* use terms such as *maximum*, *minimum*, *alarm* etc, I don't really know how relevant these are for an average desktop user - so at the moment I'm just ignoring them entirely. Instead the desklet tries to do watch sensors in order to determine which of them would appear to change between sensor data update - sensors matching this criteria will be highlighted in the desklet. As there will inevitably be some inaccuracies in the values returned due to their physical limitations, a sensor needs to have changed **more** than the configured threshold in order to be counted as *changing*.
+
+![Screenshot](sensors@tebl/settings-sensors.png)
 
 Finding the *sweet spot* between what you'd consider *relevant* or just plain *noise* will take some tuning. The recommended way is to set the threshold slider to a low level before gradually turning it up until it stops highlighting on small fluctuations.
 
-#### A warning about lm_sensors
-While *lm_sensors* is a package that is available and depended upon by most distributions, it's a project that has absolutely zero active developers. This haven't changed for 5 years by the time of writing this. So why is everyone using it?
-
-Because it works, and currently there's **no real alternative**.
-
-Why shouldn't everyone use it? Because it's not updated. As a result of that, it doesn't support any new hardware that've been sold since the last developer left the project. On the other hand there are still people writing code so that *lm_sensors* can work with that hardware.
-
-For my "AMD AM5 B650"-motherboard mentioned elsewhere, a quick search pointed to the fact that my specific MSI-branded motherboard uses the *Nuvoton 6687-R*, requiring the installation of and extra kernel module - [NCT6687D](https://github.com/Fred78290/nct6687d). This is how I solved this particular problem for my machine, beyond offering my experience with that machine I can't offer you any additional assistance on how to setup *lm_sensors* relating to your specific hardware.
-
-### What can be improved?
-
+## What can be improved?
 * No attempt at translation have been made.
-* Use icons instead of unicode symbols because some fonts likes to make them tiny compared to the text.+
-
+* Add "nvidia-smi"-output as a pseudo-chip entry
+* Add rules to change display names for *chips* and *sensors*.
