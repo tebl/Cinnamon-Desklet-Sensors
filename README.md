@@ -35,7 +35,7 @@ cd Cinnamon-Desklet-Sensors
 ./install.py -i
 ```
 
-Alternatively, you can choose to download the latest [release](https://github.com/tebl/Cinnamon-Desklet-Sensors/releases). The entry you're looking for has a name in the form of 'sensors-vX.X.zip', but make sure to click it to download (right-click and *save link as...* will usually just give you the page and not the actual file). Then unzip that into `~/.local/share/cinnamon/desklets/`, a task that can be performed like this:
+Alternatively, you can choose to download the latest [release](https://github.com/tebl/Cinnamon-Desklet-Sensors/releases). The entry you're looking for has a name in the form of 'sensors-vX.X.zip', the other entries will be complete copies of the entire repository. Then unzip that into `~/.local/share/cinnamon/desklets/`, a task that can be performed like this:
 ```
 unzip sensors-vX.X.zip -d ~/.local/share/cinnamon/desklets/
 ```
