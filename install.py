@@ -60,7 +60,7 @@ def get_package_path(uuid, uuid_path):
 
     shortname = uuid.split('@')[0]
     version = get_version(uuid_path)
-    return os.path.join(RELEASE_PATH, f'{shortname}-{version}.zip')
+    return os.path.join(RELEASE_PATH, f'{shortname}-v{version}.zip')
 
 
 def get_version(uuid_path):
