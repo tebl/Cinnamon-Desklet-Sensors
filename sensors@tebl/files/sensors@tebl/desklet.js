@@ -8,6 +8,7 @@ const Gio = imports.gi.Gio;
 const Mainloop = imports.mainloop;
 const Lang = imports.lang;
 const FileUtils = imports.misc.fileUtils;
+const ModalDialog = imports.ui.modalDialog;
 
 const FORCE_DEBUG = false;
 
@@ -23,6 +24,7 @@ SensorsDesklet.prototype = {
         this.desklet_id = desklet_id;
         this.log_debug("Initializing");
         this.setHeader(metadata.name);
+        this._menu.addAction(_("Customize current theme..."), Lang.bind(this, this.on_copy_theme));
 
         this.facts = new FactStore();
         this.facts_reset();
@@ -255,6 +257,66 @@ SensorsDesklet.prototype = {
             this.set_theme(this.setting_theme);
         }
         this.on_display_changed();
+    },
+
+    on_copy_theme: function() {
+        if (this.setting_theme != "_custom") {
+            this.create_dialog(
+                "Customize theme by copying it to 'Custom'?\n\n - Note that this will overwrite any previous customization.", 
+                this.do_copy_theme
+            );
+        } else {
+            this.create_message_box("Please select a theme first!");
+
+        }
+    },
+
+    do_copy_theme: function() {
+        let details = this.theme_details;
+        if (!details) return;
+
+        for (const key of Object.keys(details)) {
+            if (!key.startsWith("theme_")) continue;
+            this[key] = details[key];
+        }
+        this.setting_theme = "_custom";
+    },
+
+    create_dialog: function(message, callback) {
+        let dialog = new ModalDialog.ModalDialog();
+        let label = new St.Label({text: message});
+        dialog.contentLayout.add(label);
+        dialog.setButtons([
+            {
+                label: "OK",
+                action: () => {
+                    callback.call(this);
+                    dialog.close();
+                }
+            },
+            {
+                label: "Cancel",
+                action: () => {
+                    dialog.close();
+                }
+            }
+        ]);
+        dialog.open();
+    },
+
+    create_message_box: function(message) {
+        let dialog = new ModalDialog.ModalDialog();
+        let label = new St.Label({text: message});
+        dialog.contentLayout.add(label);
+        dialog.setButtons([
+            {
+                label: "OK",
+                action: () => {
+                    dialog.close();
+                }
+            }
+        ]);
+        dialog.open();
     },
 
     set_theme: function(theme_name) {
