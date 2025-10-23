@@ -25,6 +25,9 @@ SensorsDesklet.prototype = {
         this.log_debug("Initializing");
         this.setHeader(metadata.name);
         this._menu.addAction(_("Customize current theme..."), Lang.bind(this, this.on_copy_theme));
+        this._menu.addAction(_("Set theme to 'Custom'"), Lang.bind(this, this.on_theme_custom));
+        this._menu.addAction(_("Set theme to 'Dark'"), Lang.bind(this, this.on_theme_dark));
+        this._menu.addAction(_("Set theme to 'Light'"), Lang.bind(this, this.on_theme_light));
 
         this.facts = new FactStore();
         this.facts_reset();
@@ -257,6 +260,21 @@ SensorsDesklet.prototype = {
             this.set_theme(this.setting_theme);
         }
         this.on_display_changed();
+    },
+
+    on_theme_dark: function() {
+        this.setting_theme = "dark";
+        this.on_theme_changed();
+    },
+
+    on_theme_light: function() {
+        this.setting_theme = "light";
+        this.on_theme_changed();
+    },
+
+    on_theme_custom: function() {
+        this.setting_theme = "_custom";
+        this.on_theme_changed();
     },
 
     on_copy_theme: function() {
