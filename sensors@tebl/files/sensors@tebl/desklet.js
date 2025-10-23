@@ -1031,11 +1031,10 @@ DataView.prototype = {
         return this.render_sensor(chip_name, "fans", sensor_name, details.input, description, "fan");
     },
 
-    unicode_symbols: { update: "\u27F3", degrees_c: "\u2103" },
     render_temperature: function(chip_name, sensor_name, details) {
         let description = details.input;
         if (description != 0) {
-            description = details.input.toFixed(1) + this.unicode_symbols.degrees_c;
+            description = details.input.toFixed(1) + "°C";
         } else {
             description = "-";
         }
