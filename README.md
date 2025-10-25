@@ -143,4 +143,3 @@ Finding the *sweet spot* between what you'd consider *relevant* or just plain *n
 ## What can be improved?
 * No attempt at translation have been made.
 * Add "nvidia-smi"-output as a pseudo-chip entry
-* Add rules to change display names for *chips* and *sensors*.
