@@ -16,7 +16,7 @@
         "filter": {
             "type": "page",
             "title": "Filter",
-            "sections": [ "section-filter-rules", "section-filter-sensors" ]
+            "sections": [ "section-filter-sensors", "section-filter-rules" ]
         },
         "sensors": {
             "type": "page",
