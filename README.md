@@ -60,7 +60,7 @@ You can use the themes provided, or you can attempt to create your own by select
 
 ![Screenshot](sensors@tebl/settings-appearance.png)
 
-### Filtering sensors
+### Filtering entries
 The desklet by default updates every second by default, this takes care of rendering the screen as well as evaluating which information gathering tasks are currently pending. This includes tasks such as actually running the sensors-command to gather sensor telemetry, but how often we do so is configurable in the tuning-section so that you can individually set how often such processes will be run.
 
 ![Screenshot](sensors@tebl/settings-tuning.png)
@@ -101,6 +101,37 @@ Included below is the ruleset I'm currently using with a common *AMD B650 AM5* m
 !amd*:vdd*
 *:*
 ```
+
+### Renaming entries
+In the practical world there is the issue of actually remembering what the various entries refer to, and in particular how logical names relate to the physical world. In order to alleviate that somewhat, you have the option of using rules for changing **display names**. Such value always start with a dollar sign ('$') and should have a value assigned to it, and similar to other rules you can match a name directly or use partial matches.
+
+```
+$nct*=Motherboard
+$nct*:System Fan #1=Top Exhaust
+$nct*:System Fan #2=Front Top
+$nct*:System Fan #3=Front Bottom
+$nct*:System Fan #4=Rear Exhaust
+```
+
+As previously mentioned this only affects *display names*, meaning that any other type of rule will still require you to use their original names. There is however an intentional possibility for overlapping names, allowing you to group entries together as you please. In the case of overlapping sensor names the result will be a little more unpredictable as one will overwrite the other, in such a case you would need to rename overlapping sensors.
+
+The following example shows how multiple *nvme*-entries can be combined, first by removing all other sensor entries except "Composite" then adding rules to rename the specific entries to something that won't overlap:
+
+```
+# Chip rules:
+nvme*
+*
+
+# Sensor rules:
+!nvme-pci*:Sensor*
+*:*
+
+# Rename rules:
+$nvme*=M.2
+$nvme-pci-1*:Composite=Slot A
+$nvme-pci-0*:Composite=Slot B
+```
+
 
 ### Sensor changes
 While *lm-sensors* use terms such as *maximum*, *minimum*, *alarm* etc, I don't really know how relevant these are for an average desktop user - so at the moment I'm just ignoring them entirely. Instead the desklet tries to do watch sensors in order to determine which of them would appear to change between sensor data update - sensors matching this criteria will be highlighted in the desklet. As there will inevitably be some inaccuracies in the values returned due to their physical limitations, a sensor needs to have changed **more** than the configured threshold in order to be counted as *changing*.

@@ -67,8 +67,8 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_width", "theme_border_width", this.on_themeable_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "border_color", "theme_border_color", this.on_themeable_changed);
 
-        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_display_changed);
-        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_display_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_enabled", "setting_filter_enabled", this.on_filter_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "filter_rules", "setting_filter_rules", this.on_filter_changed);
     
         this.settings.bindProperty(Settings.BindingDirection.IN, "suppress_header", "suppress_header", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "sensors_per_row", "sensors_per_row", this.on_display_changed);
@@ -185,6 +185,10 @@ SensorsDesklet.prototype = {
 
     get_css_color(color, transparency) {
         return color.replace(")", "," + (1.0 - transparency) + ")").replace("rgb", "rgba");
+    },
+
+    on_filter_changed: function() {
+        this.on_display_changed();
     },
 
     on_display_changed: function() {
@@ -785,20 +789,19 @@ DataView.prototype = {
         if (devices && Object.keys(should_render).length == 0) {
             return this.render_text("No sensors to display...", container);
         }
-
         let chip_keys = Object.keys(should_render).sort();
         for (const chip_name of chip_keys) {
-            let chip = devices[chip_name];
+            let chip = should_render[chip_name];
             this.render_header(chip_name, container);
 
             let table_row = 0;
             let table_col = 0;
-            let table = new St.Table( {homogeneous: true} );
+            let table = new St.Table( { homogeneous: true } );
 
             // Fans
-            for (const sensor_name of should_render[chip_name].fans.sort()) {
-                let sensor_details = chip.fans[sensor_name];
-                table.add(this.render_fan(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
+            for (const sensor_name of Object.keys(chip.sensors.fans).sort()) {
+                let sensor = chip.sensors.fans[sensor_name];
+                table.add(this.render_fan(chip_name, sensor_name, sensor), { row: table_row, col: table_col });
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
                     table_col = 0;
@@ -816,9 +819,9 @@ DataView.prototype = {
             }
 
             // Temperature
-            for (const sensor_name of should_render[chip_name].temps.sort()) {
-                let sensor_details = chip.temps[sensor_name];
-                table.add(this.render_temperature(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
+            for (const sensor_name of Object.keys(chip.sensors.temps).sort()) {
+                let sensor = chip.sensors.temps[sensor_name];
+                table.add(this.render_temperature(chip_name, sensor_name, sensor), { row: table_row, col: table_col });
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
                     table_col = 0;
@@ -836,9 +839,9 @@ DataView.prototype = {
             }
 
             // Voltages
-            for (const sensor_name of should_render[chip_name].volts.sort()) {
-                let sensor_details = chip.volts[sensor_name];
-                table.add(this.render_voltage(chip_name, sensor_name, sensor_details), { row: table_row, col: table_col });
+            for (const sensor_name of Object.keys(chip.sensors.volts).sort()) {
+                let sensor = chip.sensors.volts[sensor_name];
+                table.add(this.render_voltage(chip_name, sensor_name, sensor), { row: table_row, col: table_col });
 
                 table_col++;
                 if (table_col == this.parent.sensors_per_row) {
@@ -847,7 +850,7 @@ DataView.prototype = {
                 }
             }
 
-            // // Fill out the rest of the table
+            // Fill out the rest of the table
             if (table_col > 0 && table_col < this.parent.sensors_per_row) {
                 for (; table_col < this.parent.sensors_per_row; table_col++) {
                     table.add(this.render_blank(), { row: table_row, col: table_col });
@@ -868,51 +871,154 @@ DataView.prototype = {
             if (!this.is_chip_enabled(chip_name)) continue;
 
             let chip = devices[chip_name];
-            let sensors = { fans: [], temps: [], volts: [] };
+            let sensors = { fans: {}, temps: {}, volts: {} };
             let sensor_count = 0;
 
             if (this.parent.include_fans) {
-                for (const sensor_name of Object.keys(chip.fans).sort()) {
+                for (const sensor_name of Object.keys(chip.fans)) {
                     if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
+                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
                     let sensor = chip.fans[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_fans) || sensor.input > 0) {
                         sensor_count++;
-                        sensors.fans.push(sensor_name);
+                        sensors.fans[sensor_display] = Object.assign(
+                            {}, 
+                            sensor, 
+                            {
+                                display_name: sensor_display,
+                                sensor_name: sensor_name
+                            }
+                        );
                     }
                 }
             }
 
             if (this.parent.include_temps) {
-                for (const sensor_name of Object.keys(chip.temps).sort()) {
+                for (const sensor_name of Object.keys(chip.temps)) {
                     if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
+                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
                     let sensor = chip.temps[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_temps) || sensor.input > 0) {
                         sensor_count++;
-                        sensors.temps.push(sensor_name);
+                        sensors.temps[sensor_display] = Object.assign(
+                            {}, 
+                            sensor, 
+                            {
+                                display_name: sensor_display,
+                                sensor_name: sensor_name
+                            }
+                        );
                     }
                 }
             }
 
             if (this.parent.include_volts) {
-                for (const sensor_name of Object.keys(chip.volts).sort()) {
+                for (const sensor_name of Object.keys(chip.volts)) {
                     if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
+                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
                     let sensor = chip.volts[sensor_name];
 
                     if ((sensor.input == 0 && this.parent.include_zero_volts) || sensor.input > 0) {
                         sensor_count++;
-                        sensors.volts.push(sensor_name);
+                        sensors.volts[sensor_display] = Object.assign(
+                            {}, 
+                            sensor, 
+                            {
+                                display_name: sensor_display,
+                                sensor_name: sensor_name
+                            }
+                        );
                     }
                 }
             }
 
+            if (sensor_count == 0) continue;
+            this.filter_sensors_merge(chip_name, result, sensors);
+        }
 
-            if (sensor_count > 0) {
-                result[chip_name] = sensors;
+        return result;
+    },
+
+    /* Mainly in case the user reassigns the name of several chips so that they
+     * share a common name, just need to ensure that we don't have overlapping
+     * sensor name - this is accomplished by assuming that the user knows what
+     * they're doing :-D
+     */
+    filter_sensors_merge: function(chip_name, result, sensors) {
+        let chip_display = this.get_chip_displayname(chip_name);
+        if (result[chip_display] == undefined) {
+            result[chip_display] = {
+                chip_name: [chip_name],
+                display_name: chip_display,
+                sensors: sensors
+            };
+        } else {
+            result[chip_display].sensors = {
+                chip_name: result[chip_display].chip_name.concat([chip_name]),
+                fans: Object.assign({}, result[chip_display].sensors.fans, sensors.fans),
+                temps: Object.assign({}, result[chip_display].sensors.temps, sensors.temps),
+                volts: Object.assign({}, result[chip_display].sensors.volts, sensors.volts)
             }
         }
-        return result;
+    },
+
+    get_chip_displayname: function(chip_name) {
+        if (!this.parent.setting_filter_enabled) return chip_name;
+
+        for (let input_rule of this.parent.setting_filter_rules.split("\n")) {
+            let [is_rename, rule, value] = this.parse_rename_rule(input_rule);
+            if (!is_rename || rule == undefined) continue;
+            if (!value) continue;
+
+            if (rule.indexOf(":") > -1) continue;
+            if (this.check_rule_matches(rule, chip_name) && value) {
+                return value;
+            }
+        }
+
+        return chip_name;
+    },
+
+    get_sensor_displayname: function(chip_name, sensor_name) {
+        if (!this.parent.setting_filter_enabled) return sensor_name;
+
+        for (let input_rule of this.parent.setting_filter_rules.split("\n")) {
+            let [is_rename, rule, value] = this.parse_rename_rule(input_rule);
+            if (!is_rename || rule == undefined) continue;
+            if (!value) continue;
+
+            // Detect chip rules
+            let index = rule.indexOf(":");
+            if (index < 0) continue;
+
+            let chip_part = rule.slice(0, index);
+            if (!this.check_rule_matches(chip_part, chip_name)) continue;
+
+            let sensor_part = rule.slice(index + 1);
+            if (!this.check_rule_matches(sensor_part, sensor_name)) continue;
+            return value;
+        }
+
+        return sensor_name;
+    },
+
+    parse_rename_rule: function(rule) {
+        let is_rename = false;
+        let value = undefined;
+        rule = rule.trim();
+
+        let index = rule.indexOf("=");
+        if (rule[0] == "$" && index > -1) {
+            value = rule.slice(index + 1);
+            rule = rule.slice(1, index);
+            is_rename = true;
+        } else {
+            rule = undefined;
+        }
+
+        return [is_rename, rule, value];
     },
 
     /* Rules are processed in the order they are written, and while it's
@@ -1001,7 +1107,7 @@ DataView.prototype = {
         }
 
         // Filter commented lines
-        if ([ ";", "#" ].includes(rule[0])) {
+        if ([ "$", ";", "#" ].includes(rule[0])) {
             rule = undefined;
         }
 

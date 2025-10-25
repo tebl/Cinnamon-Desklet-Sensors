@@ -2,6 +2,6 @@
     "uuid": "sensors@tebl",
     "name": "Sensors",
     "description": "Display information gathered from lm-sensors, more specifically the 'sensors'-command.",
-    "version": "1.0",
+    "version": "1.1",
     "prevent-decorations": true
 }
