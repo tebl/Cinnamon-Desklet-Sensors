@@ -78,6 +78,7 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_temps", "threshold_changed_temps", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "threshold_changed_volts", "threshold_changed_volts", this.on_display_changed);
 
+        this.settings.bindProperty(Settings.BindingDirection.IN, "include_nvidia", "include_nvidia", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_fans", "include_fans", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_fans", "include_zero_fans", this.on_display_changed);
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_temps", "include_temps", this.on_display_changed);
@@ -86,6 +87,9 @@ SensorsDesklet.prototype = {
         this.settings.bindProperty(Settings.BindingDirection.IN, "include_zero_volts", "include_zero_volts", this.on_display_changed);
 
         this.settings.bindProperty(Settings.BindingDirection.IN, "read_sensors_expiration", "read_sensors_expiration", this.on_settings_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "read_proc_modules_expiration", "read_proc_modules_expiration", this.on_settings_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "read_nvidia_count_expiration", "read_nvidia_count_expiration", this.on_settings_changed);
+        this.settings.bindProperty(Settings.BindingDirection.IN, "get_nvidia_query_expiration", "get_nvidia_query_expiration", this.on_settings_changed);
 
         this.load_filter_settings();
         this.toggle_decorations();
@@ -399,6 +403,9 @@ SensorsDesklet.prototype = {
             try {
                 // Start asynchronous tasks
                 this.read_sensors();
+                this.read_proc_modules();
+                this.read_nvidia_count();
+                this.read_nvidia_update();
             } catch (e) {
                 this.log_error("Uncaught error in on_data_changed: " + e); 
                 this.set_error("Uncaught error", { set_failing: "sensors.devices" });
@@ -502,6 +509,12 @@ SensorsDesklet.prototype = {
                 }
             }
 
+            switch (sensor_type) {
+                case "fans": mapped.unit = "rpm"; break;
+                case "temps": mapped.unit = "degrees_c"; break;
+                case "volts": mapped.unit = "voltage"; break;
+            }
+
             filtered_data[chip_name][sensor_type][sensor_name] = mapped;
         }
     },
@@ -522,6 +535,221 @@ SensorsDesklet.prototype = {
         }
 
         return undefined;
+    },
+
+    read_proc_modules: function() {
+        if (!this.include_nvidia) return;
+        if (!this.facts.is_pending_update('read_proc_modules')) return;
+        this.log_debug("running read_proc_modules");
+
+        let file_modules = Gio.file_new_for_path("/proc/modules");
+        file_modules.load_contents_async(null, (file, response) => {
+            try {
+                let [success, contents, tag] = file.load_contents_finish(response);
+                if (success) {
+                    let result = [];
+
+                    let data = ByteArray.toString(contents);
+                    let entries = data.split('\n');
+                    for (const entry of entries) {
+                        let [module, size, instances, depend, state, offset] = entry.split(' ');
+
+                        if (module == "video") {
+                            for (const dependency of depend.split(',')) {
+                                if (dependency) {
+                                    result.push(dependency);
+                                    this.facts.set("video." + dependency, true, this.read_proc_modules_expiration);
+                                }
+                            }
+                        }
+                    }
+
+                    this.facts.set("read_proc_modules", result, this.read_proc_modules_expiration);
+                }
+
+                GLib.free(contents);
+            } catch (error) {
+                this.log_error("Failed processing kernel modules: " + error)
+                this.set_error("Error checking modules", { set_failing: "read_proc_modules" }, this.read_proc_modules_expiration);
+            }
+        });
+    },
+
+    read_nvidia_count: function() {
+        if (!this.include_nvidia) return;
+        if (!this.facts.get("video.nvidia_modeset")) return;
+        if (!this.facts.is_pending_update("nvidia.devices")) return;
+        this.log_debug("running nvidia_gpu_count");
+
+        try {
+            let [success, child_pid, std_in, std_out, std_err] = GLib.spawn_async_with_pipes(
+                null,
+                ["/usr/bin/nvidia-smi", "-L"],
+                null,
+                GLib.SpawnFlags.DO_NOT_REAP_CHILD | GLib.SpawnFlags.LEAVE_DESCRIPTORS_OPEN,
+                null
+            );
+            GLib.close(std_in);
+            GLib.close(std_err);
+            GLib.child_watch_add(GLib.PRIORITY_DEFAULT, child_pid, function(pid, wait_status, user_data) {
+                GLib.spawn_close_pid(child_pid);
+            });
+
+            if (success) {
+                let desklet_instance = this;
+                let io_channel_std_out = GLib.IOChannel.unix_new(std_out);
+                let tag_watch_std_out = GLib.io_add_watch(
+                    io_channel_std_out, GLib.PRIORITY_DEFAULT,
+                    GLib.IOCondition.IN | GLib.IOCondition.HUP,
+                    function(channel, condition, data) {
+                        if (condition != GLib.IOCondition.HUP) {
+                            let [status, out] = channel.read_to_end();
+                            let data = out.toString().split('\n');
+
+                            let devices = {};
+                            for (const entry of data) {
+                                desklet_instance.parse_nvidia_gpu(devices, entry);
+                            }
+
+                            desklet_instance.facts.set("nvidia.devices", devices, desklet_instance.read_nvidia_count_expiration);
+                        }
+                        GLib.source_remove(tag_watch_std_out);
+                        channel.shutdown(true);
+                    }
+                );
+            }
+        } catch (error) {
+            this.log_error("Failed read_nvidia_count: " + error);
+            this.set_error("Error Nvidia GPU", { set_failing: "nvidia.devices" }, this.read_nvidia_count_expiration);
+        }
+    },
+
+    parse_nvidia_gpu: function(devices, entry) {
+        if (entry) {
+            entry = entry.trim();
+            let index = entry.indexOf(":");
+            if (index > -1) {
+                let [id, description] = [ entry.slice(0, index), entry.slice(index + 1) ];
+                id = parseInt(id.split(' ')[1]);
+                
+                // NAME (UUID: xxx)
+                index = description.indexOf('(');
+                let name = description.slice(0, index - 1);
+                let uuid = description.slice(index + 7, -1);
+
+                devices[id] = { name: name, uuid: uuid };
+            }
+        }
+    },
+
+    read_nvidia_update: function() {
+        if (!this.include_nvidia) return;
+        if (!this.facts.get("video.nvidia_modeset")) return;
+
+        let nvidia_devices = this.facts.get("nvidia.devices");
+        if (!nvidia_devices) return;
+
+        this.get_nvidia_query(this.get_next_nvidia_id(nvidia_devices));
+    },
+
+    get_next_nvidia_id: function(nvidia_devices) {
+        let keys = Object.keys(nvidia_devices);
+        if (keys.length == 0) return undefined;
+        if (this.nvidia_stagger == undefined || this.nvidia_stagger > (keys.length - 1)) {
+            this.nvidia_stagger = 0;
+        }
+        let result = keys[this.nvidia_stagger];
+        this.nvidia_stagger++;
+        return result;
+    },
+
+    get_nvidia_query_fields: [ "temperature.gpu", "temperature.memory", "fan.speed" ],
+    get_nvidia_query: function(gpu_id) {
+        if (gpu_id == undefined) return;
+        let gpu_key = "nvidia.gpu_" + gpu_id;
+        if (!this.facts.is_pending_update(gpu_key)) return;
+        this.log_debug("running nvidia_gpu_query(" + gpu_id + ")");
+
+        try {
+            let [success, child_pid, std_in, std_out, std_err] = GLib.spawn_async_with_pipes(
+                null,
+                [
+                    "/usr/bin/nvidia-smi", 
+                    "--query-gpu=" + this.get_nvidia_query_fields.join(","), 
+                    "--format=csv,noheader,nounits", 
+                    "--id=" + gpu_id
+                ],
+                null,
+                GLib.SpawnFlags.DO_NOT_REAP_CHILD | GLib.SpawnFlags.LEAVE_DESCRIPTORS_OPEN,
+                null
+            );
+            GLib.close(std_in);
+            GLib.close(std_err);
+            GLib.child_watch_add(GLib.PRIORITY_DEFAULT, child_pid, function(pid, wait_status, user_data) {
+                GLib.spawn_close_pid(child_pid);
+            });
+
+            if (success) {
+                let desklet_instance = this;
+                let io_channel_std_out = GLib.IOChannel.unix_new(std_out);
+                let tag_watch_std_out = GLib.io_add_watch(
+                    io_channel_std_out, GLib.PRIORITY_DEFAULT,
+                    GLib.IOCondition.IN | GLib.IOCondition.HUP,
+                    function(channel, condition, data) {
+                        if (condition != GLib.IOCondition.HUP) {
+                            let [status, out] = channel.read_to_end();
+                            let data = out.toString().trim();
+
+                            let keys = desklet_instance.get_nvidia_query_fields;
+                            let values = data.split(",");
+
+                            try {
+                                let result = { fans: {}, temps: {}, volts: {} };
+
+                                for (var idx = 0; idx < keys.length; idx++) {
+                                    let key = keys[idx];
+                                    let value = values[idx];
+                                    value = value.trim();
+
+                                    if (value == "N/A") continue;
+                                    switch (key) {
+                                        case "fan.speed":
+                                            result.fans["GPU Fan"] = { 
+                                                input: parseInt(value),
+                                                unit: "percent"
+                                            };
+                                            break;
+
+                                        case "temperature.gpu":
+                                            result.temps["GPU"] = { 
+                                                input: parseInt(value),
+                                                unit: "degrees_c"
+                                            };
+                                            break;
+
+                                        case "temperature.memory":
+                                            result.temps["GPU Memory"] = {
+                                                input: parseInt(value),
+                                                unit: "degrees_c"
+                                            };
+                                            break;
+                                    }
+                                }
+
+                                desklet_instance.facts.set(gpu_key, result, desklet_instance.get_nvidia_query_expiration);
+                            } catch (error) {
+                                desklet_instance.log_error(error);
+                            }
+                        }
+                        GLib.source_remove(tag_watch_std_out);
+                        channel.shutdown(true);
+                    }
+                );
+            }
+        } catch (error) {
+            this.log_error("Failed get_nvidia_query: " + error);
+            this.set_error("Error Nvidia GPU", { set_failing: gpu_key }, this.get_nvidia_query_expiration);
+        }
     },
 
     set_timer: function() {
@@ -783,12 +1011,14 @@ DataView.prototype = {
             vertical: true
         });
 
+        let should_render = {};
         let devices = this.parent.facts.get("sensors.devices");
-        let should_render = this.filter_sensors(devices);
-
+        this.get_sensors(devices, should_render);
+        this.get_nvidia_sensors(should_render);
         if (devices && Object.keys(should_render).length == 0) {
             return this.render_text("No sensors to display...", container);
         }
+
         let chip_keys = Object.keys(should_render).sort();
         for (const chip_name of chip_keys) {
             let chip = should_render[chip_name];
@@ -863,82 +1093,107 @@ DataView.prototype = {
         return container;
     },
 
-    filter_sensors: function(devices) {
-        if (!devices) return {};
+    get_sensors: function(devices, result) {
+        if (!devices) return;
 
-        let result = {};
         for (const chip_name of Object.keys(devices)) {
             if (!this.is_chip_enabled(chip_name)) continue;
 
             let chip = devices[chip_name];
-            let sensors = { fans: {}, temps: {}, volts: {} };
-            let sensor_count = 0;
+            let sensors_found = { fans: {}, temps: {}, volts: {} };
+            let sensors_count = 0;
 
             if (this.parent.include_fans) {
-                for (const sensor_name of Object.keys(chip.fans)) {
-                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
-                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
-                    let sensor = chip.fans[sensor_name];
-
-                    if ((sensor.input == 0 && this.parent.include_zero_fans) || sensor.input > 0) {
-                        sensor_count++;
-                        sensors.fans[sensor_display] = Object.assign(
-                            {}, 
-                            sensor, 
-                            {
-                                display_name: sensor_display,
-                                sensor_name: sensor_name
-                            }
-                        );
-                    }
-                }
+                sensors_count = this.filter_sensor_entries(
+                    chip, "fans", chip_name, 
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_fans);
             }
 
             if (this.parent.include_temps) {
-                for (const sensor_name of Object.keys(chip.temps)) {
-                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
-                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
-                    let sensor = chip.temps[sensor_name];
-
-                    if ((sensor.input == 0 && this.parent.include_zero_temps) || sensor.input > 0) {
-                        sensor_count++;
-                        sensors.temps[sensor_display] = Object.assign(
-                            {}, 
-                            sensor, 
-                            {
-                                display_name: sensor_display,
-                                sensor_name: sensor_name
-                            }
-                        );
-                    }
-                }
+                sensors_count = this.filter_sensor_entries(
+                    chip, "temps", chip_name,
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_temps);
             }
 
             if (this.parent.include_volts) {
-                for (const sensor_name of Object.keys(chip.volts)) {
-                    if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
-                    let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
-                    let sensor = chip.volts[sensor_name];
-
-                    if ((sensor.input == 0 && this.parent.include_zero_volts) || sensor.input > 0) {
-                        sensor_count++;
-                        sensors.volts[sensor_display] = Object.assign(
-                            {}, 
-                            sensor, 
-                            {
-                                display_name: sensor_display,
-                                sensor_name: sensor_name
-                            }
-                        );
-                    }
-                }
+                sensors_count = this.filter_sensor_entries(
+                    chip, "volts", chip_name, 
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_volts);
             }
 
-            if (sensor_count == 0) continue;
-            this.filter_sensors_merge(chip_name, result, sensors);
+            if (sensors_count == 0) continue;
+            this.filter_sensors_merge(chip_name, result, sensors_found);
+        }
+    },
+
+    filter_sensor_entries: function(chip, category, chip_name, sensors_count, sensors_found, include_zero_value) {
+        try {
+            for (const sensor_name of Object.keys(chip[category])) {
+                let sensor = chip[category][sensor_name];
+                if (sensor.input == 0 && !include_zero_value) continue;
+                if (!this.is_sensor_enabled(chip_name, sensor_name)) continue;
+
+                let sensor_display = this.get_sensor_displayname(chip_name, sensor_name);
+                sensors_found[category][sensor_display] = Object.assign({}, sensor, 
+                    {
+                        display_name: sensor_display,
+                        sensor_name: sensor_name
+                    }
+                );
+                sensors_count++;
+            }
+        } catch (error) {
+            this.parent.log_error(error);
         }
 
-        return result;
+        return sensors_count;
+    },
+
+    get_nvidia_sensors: function(result) {
+        if (!this.parent.include_nvidia) return;
+        let nvidia_devices = this.parent.facts.get("nvidia.devices");
+        if (!nvidia_devices) return;
+
+        for (const gpu_id of Object.keys(nvidia_devices)) {
+            const chip_name = "nvidia-gpu-" + gpu_id;
+            if (!this.is_chip_enabled(chip_name)) continue;
+
+            let gpu_key = "nvidia.gpu_" + gpu_id;
+            let chip = this.parent.facts.get(gpu_key);
+            if (!chip) continue;
+
+            let sensors_found = { fans: {}, temps: {}, volts: {} };
+            let sensors_count = 0;
+
+            if (this.parent.include_fans) {
+                sensors_count = this.filter_sensor_entries(
+                    chip, "fans", chip_name, 
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_fans);
+            }
+
+            if (this.parent.include_temps) {
+                sensors_count = this.filter_sensor_entries(
+                    chip, "temps", chip_name, 
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_temps
+                );
+            }
+
+            if (this.parent.include_volts) {
+                sensors_count = this.filter_sensor_entries(
+                    chip, "volts", chip_name, 
+                    sensors_count, sensors_found, 
+                    this.parent.include_zero_volts
+                );
+            }
+
+            if (sensors_count == 0) continue;
+            this.filter_sensors_merge(chip_name, result, sensors_found);
+        }
     },
 
     /* Mainly in case the user reassigns the name of several chips so that they
@@ -1132,34 +1387,42 @@ DataView.prototype = {
         return new St.Label({ text: "" });
     },
 
-    render_fan: function(chip_name, sensor_name, details) {
-        let description = details.input + " RPM";
-        return this.render_sensor(chip_name, "fans", sensor_name, details.input, description, "fan");
+    render_fan: function(chip_name, sensor_name, sensor_data) {
+        let description = this.get_descriptive_value(sensor_data);
+        return this.render_sensor(chip_name, "fans", sensor_name, sensor_data, description, "fan");
     },
 
-    render_temperature: function(chip_name, sensor_name, details) {
-        let description = details.input;
-        if (description != 0) {
-            description = details.input.toFixed(1) + "°C";
-        } else {
-            description = "-";
+    render_temperature: function(chip_name, sensor_name, sensor_data) {
+        let description = this.get_descriptive_value(sensor_data);
+        return this.render_sensor(chip_name, "temps", sensor_name, sensor_data, description, "temperature_medium");
+    },
+
+    render_voltage: function(chip_name, sensor_name, sensor_data) {
+        let description = this.get_descriptive_value(sensor_data);
+        return this.render_sensor(chip_name, "volts", sensor_name, sensor_data, description, "volt");
+    },
+
+    get_descriptive_value: function(sensor_data) {
+        if (sensor_data.unit) {
+            switch(sensor_data.unit) {
+                case "degrees_c":
+                    if (sensor_data.input == 0) return "-";
+                    return sensor_data.input.toFixed(1) + "°C";
+                case "rpm":
+                    return sensor_data.input + " RPM";
+                case "voltage":
+                    if (sensor_data.input == 0) return "0V";
+                    return sensor_data.input.toFixed(1) + "V";
+                case "percent":
+                    return sensor_data.input.toFixed(0) + "%";
+            }
         }
 
-        return this.render_sensor(chip_name, "temps", sensor_name, details.input, description, "temperature_medium");
+        return sensor_data.toString();
     },
 
-    render_voltage: function(chip_name, sensor_name, details) {
-        let description = details.input;
-        if (description != 0) {
-            description = details.input.toFixed(1);
-        }
-        description = description + "V";
-
-        return this.render_sensor(chip_name, "volts", sensor_name, details.input, description, "volt");
-    },
-
-    render_sensor: function(chip_name, sensor_type, sensor_name, sensor_value, description, icon_name) {
-        let is_active = this.get_sensor_active(chip_name, sensor_type, sensor_name, sensor_value);
+    render_sensor: function(chip_name, sensor_type, sensor_name, sensor_data, description, icon_name) {
+        let is_active = this.get_sensor_active(chip_name, sensor_type, sensor_name, sensor_data);
 
         let box = new St.BoxLayout( { vertical: false, y_align: St.Align.MIDDLE } );
         box.add_actor( this.get_sensor_icon(is_active, icon_name) );
@@ -1172,41 +1435,44 @@ DataView.prototype = {
         return box;
     },
 
-    get_sensor_active: function(chip_name, sensor_type, sensor_name, sensor_value) {
+    get_sensor_active: function(chip_name, sensor_type, sensor_name, sensor_data) {
         let key = "sensors." + chip_name + "." + sensor_name;
 
         let previous = this.parent.facts.get(key);
         if (previous == undefined) {
-            this.parent.facts.set(key, sensor_value, this.parent.read_sensors_expiration);
+            this.parent.facts.set(key, sensor_data.input, this.parent.read_sensors_expiration);
             return false;
         }
 
-        if (this.check_difference_exceeded(key, sensor_type, sensor_name, sensor_value, previous)) {
+        if (this.check_difference_exceeded(key, sensor_type, sensor_name, sensor_data, previous)) {
             return true;
         }
 
         return false;
     },
 
-    check_difference_exceeded: function(key, sensor_type, sensor_name, sensor_value, previous) {
+    check_difference_exceeded: function(key, sensor_type, sensor_name, sensor_data, previous) {
         const key_duration = key + ".sticky";
+        let sensor_value = sensor_data.input;
         if (sensor_value === previous) return this.parent.facts.is_valid(key_duration, true);
 
-        let limit = this.get_sensor_changed_threshold(sensor_type);
-        if (limit < 0) return false;
+        let limit = this.get_sensor_changed_threshold(sensor_type, sensor_data);
+        if (limit <= 0) return false;
 
         this.parent.facts.set(key, sensor_value, this.parent.read_sensors_expiration);
         const difference = Math.abs(sensor_value - previous);
         if (difference > limit) {
             this.parent.facts.set(key_duration, sensor_value, this.parent.sensor_changed_duration);
-            this.parent.log_debug(sensor_name + ": " + previous + " -> " + sensor_value + " (" + difference.toFixed(1) + ")");
+            this.parent.log_debug(sensor_name + ": " + previous + " -> " + sensor_value + " (" + difference + ")");
             return true;
         }
 
         return this.parent.facts.is_valid(key_duration, true);
     },
 
-    get_sensor_changed_threshold: function(sensor_type) {
+    get_sensor_changed_threshold: function(sensor_type, sensor_data) {
+        if (sensor_data.unit == "percent") return 1;
+
         switch (sensor_type) {
             case "fans":
                 return this.parent.threshold_changed_fans;
